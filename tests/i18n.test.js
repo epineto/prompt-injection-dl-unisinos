@@ -38,9 +38,15 @@ test('toda chave t(\'…\') usada na interface existe nos dicionários (PT e EN)
   assert.deepEqual(falta, []);
 });
 
-test('nenhum número do trabalho monolíngue sobrevive nos textos da interface', () => {
-  const proibidos = [/0,873/, /0\.873/, /31\.521/, /31,521/, /\b983 (termos|terms|pesos|weights|números|numbers)/, /436 amostras/, /436 training samples/];
+test('nenhum número nem rótulo da versão anterior (com alemão) sobrevive nos textos da interface', () => {
+  const proibidos = [/0,873/, /0\.873/, /31\.521/, /31,521/, /59\.681/, /59,681/, /1\.863/, /1,863/, /\b983\b/, /\b436\b/, /\b872\b/, /0,921/, /0\.921/, /0,956/, /0\.956/, /954\.881/, /954,881/,
+    /EN\/DE/, /\bDE\b/, /Schreibe/i, /\balles\b/i, /Seguro \(DE\)/, /Injeção \(DE\)/, /H\s*=\s*32,? (Adam|taxa|rate)/];
   for (const [nome, d] of [['pt', pt], ['en', en]]) for (const [k, v] of Object.entries(d)) for (const re of proibidos) assert.ok(!re.test(v), `${nome}:${k} contém ${re}`);
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   for (const re of proibidos) assert.ok(!re.test(html), `index.html contém ${re}`);
+});
+
+test('o alemão só é mencionado como língua DESCARTADA (observação do deepset), nunca como língua do conjunto', () => {
+  const ok = new Set(['testar.pt_nota', 'res.dados_d', 'map.dados.r', 'sobre.lic_deepset', 'sobre.obs_deepset']);
+  for (const [nome, d] of [['pt', pt], ['en', en]]) for (const [k, v] of Object.entries(d)) if (/alem[ãa]o|german/i.test(v)) assert.ok(ok.has(k) && /descartad|discarded/i.test(v), `${nome}:${k}`);
 });

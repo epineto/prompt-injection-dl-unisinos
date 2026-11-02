@@ -38,15 +38,15 @@ test('TF-IDF: vetores esparsos iguais ao Python (≥ 20 textos, tolerância 1e-9
 
 test('vocabulário e idf reajustados no treino coincidem com data/vocab.json', () => {
   const v = ajustar(dataset.treino.texto, { maxVocab: 2000, minDf: 2 });
-  assert.equal(v.termos.length, 1863);
+  assert.equal(v.termos.length, 788);
   assert.deepEqual(v.termos, vocab.termos);
-  assert.equal(v.n_documentos, 872);
+  assert.equal(v.n_documentos, 432);
   for (let i = 0; i < v.idf.length; i++) assert.ok(Math.abs(v.idf[i] - vocab.idf[i]) < 1e-9);
 });
 
-test('vocabulários por língua de treino (só EN/DE: 983; só PT: 928) coincidem com o Python', () => {
+test('vocabulários por língua de treino (só EN: 375; só PT: 384) coincidem com o Python', () => {
   const n = dataset.treino.n_orig;
-  assert.equal(n, 436);
+  assert.equal(n, 216);
   for (const [nome, textos] of [['orig', dataset.treino.texto.slice(0, n)], ['pt', dataset.treino.texto.slice(n)]]) {
     const v = ajustar(textos, { maxVocab: 2000, minDf: 2 }), p = ref.vocab_por_idioma[nome];
     assert.equal(v.termos.length, p.n_termos);
@@ -54,8 +54,8 @@ test('vocabulários por língua de treino (só EN/DE: 983; só PT: 928) coincide
     assert.equal(sha(v.termos), p.sha256, nome);
     assert.ok(Math.abs(v.idf.reduce((a, b) => a + b, 0) - p.idf_soma) < 1e-9);
   }
-  assert.equal(ref.vocab_por_idioma.orig.n_termos, 983);
-  assert.equal(ref.vocab_por_idioma.pt.n_termos, 928);
+  assert.equal(ref.vocab_por_idioma.orig.n_termos, 375);
+  assert.equal(ref.vocab_por_idioma.pt.n_termos, 384);
 });
 
 test('português com acentos, cedilha e til: JS (\\p{L}) = Python (\\w) nos casos de borda e em todos os textos PT', () => {
