@@ -11,31 +11,42 @@ Browser training uses He initialization and mulberry32 shuffling; PyTorch uses a
 
 | Assignment item | Where in the lab | How | Expected value |
 |---|---|---|---|
-| Data: 436 train, 110 validation, 116 test (deepset); OOD neuralchemy and xTRam1 | `#resultados` → Data | Open the section | 162, 41 and 60 injections; 37.2%, 37.3%, 51.7% |
-| 983-term vocabulary; TF-IDF equal to scikit-learn (diff ≈ 1e-16) | `#testar` → What the model sees; `tests/texto.test.js` | `npm test` | 983 terms; vectors identical to Python (tolerance 1e-9) |
-| Hand-written gradients = autograd (error ≈ 1e-16) | `#backprop`; `tests/mlp.test.js`, `tests/xor.test.js` | `npm test` | Gradients equal to Python and to finite differences |
-| Parameter count V·H+H+H+1 = 31,521 (H = 32) | `#treinar` → Parameters | Change H | 31,521 for H = 32; 1,971 for H = 2 |
-| Final model (Adam, H = 32, rate 0.01, seed 0): confusion matrix TP 50, FP 1, FN 10, TN 55; F1 0.901 | `#testar` → deepset | Threshold 0.50 | Identical (exported pre-trained model) |
-| OOD (seed 0, full set): neuralchemy F1 0.705; xTRam1 F1 0.538 | `#testar` ("Python, full set" line); matrices on the 300-text sample | Threshold 0.50 | Sample: close F1 (0.702 and 0.559) |
-| Figure 1: optimizers (SGD 1.0; Momentum 0.1; RMSProp 0.01; Adam 0.01) | `#otimizadores` | Multiplier ×1, seed 0, **Compare** | RMSProp and Adam: best epoch around 5 to 6; SGD and Momentum: around 20 to 23; 5-seed reference in the lower table |
+| Data: 872 training texts (436 + 436 translations), 220 validation (110 + 110), EN/DE and PT tests of 116 each (deepset); OOD neuralchemy, xTRam1 and BR-synthetic | `#resultados` → Data | Open the section | 324 and 82 injections (37.2% and 37.3%); 60 of 116 in both tests (51.7%) |
+| 1,863-term vocabulary (EN/DE only: 983; PT only: 928); TF-IDF equal to scikit-learn (diff ≈ 1.7e-16) | `#testar` → What the model sees; `#treinar` (language selector); `tests/texto.test.js` | `npm test` | Vocabularies identical to Python (SHA-256 hash); vectors equal (tolerance 1e-9) |
+| Tokenization equal in Python (`\w`) and JavaScript (`\p{L}`), with accents, cedilla and tilde | `tests/texto.test.js` | `npm test` | Hash of all texts (EN, DE, PT and BR-synthetic) identical |
+| Hand-written gradients = autograd (error ≈ 5.6e-17) | `#backprop`; `tests/mlp.test.js`, `tests/xor.test.js` | `npm test` | Gradients equal to Python and to finite differences |
+| Parameter count V·H+H+H+1 = 59,681 (V = 1,863, H = 32) | `#treinar` → Parameters | Change H or the training language | 59,681 for H = 32 (bilingual); 3,731 for H = 2; 31,521 no longer appears (it was the EN/DE-only vocabulary) |
+| Final model (Adam, H = 32, rate 0.001, seed 0, bilingual training): EN/DE TP 49, FP 1, FN 11, TN 55 (F1 0.891); PT TP 55, FP 0, FN 5, TN 56 (F1 0.957) | `#testar` → EN/DE and PT matrices | Threshold 0.50 | Identical (exported pre-trained model, re-checked in the tests) |
+| OOD (seed 0, full set): neuralchemy F1 0.750; xTRam1 F1 0.496; BR-synthetic F1 0.571 | `#testar` ("Python, full set" line); matrices on the samples (300, 300 and 200 texts) | Threshold 0.50 | Samples: close F1 (0.757; 0.492; 0.571); on BR-synthetic everything is labelled injection |
+| Rate choice (grid, 3 seeds): SGD 1; Momentum 0.1; RMSProp 0.01; Adam 0.001 (Adam 0.01 ties on loss: 0.1898 vs 0.1889) | `#resultados` → Optimizers (grid); `#otimizadores` | Tick "Adam with lr 0.01" and **Compare** | Adam 0.01 reaches the minimum in few epochs (3.7 on average over 3 seeds) |
+| Figure 1: optimizers, best epoch (RMSProp 3.8; SGD 19.4; Momentum 16.0; Adam 30.4) | `#otimizadores` | Multiplier ×1, seed 0, **Compare** | RMSProp around epoch 4; SGD and Momentum around 11 to 20; Adam around 31; 5-seed reference in the lower table |
 | Rate too large/small (Lecture 4) | `#otimizadores` | Multiplier ×10 and ×0.1 | ×10: oscillation/divergence; ×0.1: slow convergence |
-| Test F1 per optimizer (SGD 0.842; Momentum 0.840; RMSProp 0.868; Adam 0.873 ± 0.018) | `#resultados` → Optimizers | Open the section | Values above; in the browser, 1 seed: close |
-| Figure 2: capacity (H = 0, 2, 8, 32, 128, 512) | `#resultados` → Capacity; `#treinar` | In `#treinar`, vary H | Test F1 between 0.86 and 0.88; best validation loss at H = 8 to 32; H = 512 worse (0.284) |
-| Representation (BoW 0.873; TF-IDF 0.873; uni+bigrams 0.883) | `#resultados` → Representation | Open the section | Values above (within deviation); no browser control |
-| Figure 3: generalization vs DistilBERT/BERT-base (Assignment 01) | `#resultados` → Generalization | Open the section | MLP deepset 0.873; neuralchemy 0.712; xTRam1 0.534 |
-| Cost: 31,521 parameters, ≈ 0.15 ms per text, ≈ 340× faster than DistilBERT | `#resultados` → Cost | Open the section | 0.15 ms vs 52.2 ms (p50) |
-| Most influential terms by occlusion ("digo", "context", "alles", "code"…) | `#resultados` → Terms; `#testar` (highlight) | Paste a text with those terms | Table from the assignment; in the highlight, color is the probability drop |
+| Bilingual test F1 per optimizer (SGD 0.851; Momentum 0.842; RMSProp 0.894; Adam 0.921) and per language (EN/DE 0.785 to 0.883; PT 0.905 to 0.956) | `#resultados` → Optimizers | Open the section | Values above; in the browser, 1 seed: close |
+| Hypothesis H1: lowest validation loss belongs to SGD/Momentum (0.157/0.159); SGD/Adam rate ratio = 1,000 | `#resultados` → Optimizers | Open the section | "Lower loss" refuted; "faster" only in part (RMSProp; Adam with rate 0.01) |
+| Figure 2: capacity (H = 0, 2, 8, 32, 128, 512); parsimony rule | `#resultados` → Capacity; `#treinar` | In `#treinar`, vary H | Bilingual F1 0.755 (H = 0), 0.864, 0.926, 0.921, 0.925 and 0.919; validation loss 0.477 to 0.185; H = 32 by the parsimony rule (declared as a deviation from the protocol) |
+| Representation (BoW 0.901; TF-IDF 0.921; uni+bigrams 0.883) | `#resultados` → Representation | Open the section | Values above; no browser control |
+| Figure 4 and hypothesis H4: training language × test set | `#treinar` ("Training languages" selector); `#resultados` → Languages | Train with the three options and compare the EN/DE and PT tests | Python: EN/DE only → PT 0.677; PT only → EN/DE 0.375; bilingual → EN/DE 0.883 and PT 0.956; BR-synthetic 0.571 in all three |
+| Figure 3: generalization vs DistilBERT/BERT-base (Assignment 01, EN/DE only) | `#resultados` → Generalization | Open the section | Bilingual MLP: EN/DE 0.883; PT 0.956; neuralchemy 0.747; xTRam1 0.498; BR-synthetic 0.571 (AUC 0.642); bilingual logistic regression: 0.849; 0.909; 0.690; 0.507; 0.571 |
+| Cost: 59,681 parameters, ≈ 0.15 ms per text, ≈ 340× faster than DistilBERT | `#resultados` → Cost | Open the section | 0.15 ms vs 52.2 ms (p50); timing varies per run |
+| Most influential terms by occlusion ("gere", "context", "digo", "imagine"…) | `#resultados` → Terms; `#testar` (highlight) | Paste a text with those terms | Table from the assignment; in the highlight, color is the probability drop |
 | A gradient descent step lowers the loss | `#backprop` | **Step** | Mean loss falls at each step with a suitable rate |
 
 ## One-minute shortcut
-1. `#testar`: "Classic injection (EN)" example → probability ≈ 99.8%.
-2. `#treinar`: **Train** with the default values (takes seconds) → best epoch around 5.
-3. `#otimizadores`: **Compare** → adaptive methods faster, not better.
+1. `#testar`: "Classic injection (EN)" example → probability ≈ 99.4% (in Portuguese, "Classic injection (PT)": 99.8%).
+2. `#treinar`: **Train** with the default values (bilingual, takes seconds) → bilingual F1 ≈ 0.92; then "EN/DE only" and "PT only" to see hypothesis H4.
+3. `#otimizadores`: **Compare**, with and without "Adam with lr 0.01" → RMSProp (and Adam with rate 0.01) reach the minimum in few epochs; they do not have lower loss.
 4. `#backprop`: **Train** → the loss falls and the boundary separates XOR.
+
+## Bilingual data and the translation
+`data/deepset_pt.json` is the aligned Brazilian-Portuguese translation of deepset/prompt-injections (546 training and 116 test texts), used by `reference/python/injecao.py` and by the notebook (raw URL of the repository, `https://raw.githubusercontent.com/epineto/prompt-injection-dl-unisinos/main/data/deepset_pt.json`). It was produced by an LLM and checked by sampling (about 24 corrections): it is **not native speech**. It is a derivative work of deepset (Apache-2.0), with attribution. Licenses: deepset and neuralchemy under Apache-2.0; xTRam1 with no declared license; BR-synthetic (`ai-safety-brazil/prompt-injection-br-synthetic`) under CC-BY-4.0, with attribution.
 
 ## Regenerating data and references
 ```bash
-python reference/python/gen_dados.py        # data/*.json (trains the pre-trained model; needs torch, scikit-learn, datasets)
+# needs torch, scikit-learn, datasets and the four datasets in the Hugging Face cache (HF_HUB_OFFLINE=1 uses the cache)
+python reference/python/gen_dados.py        # data/*.json (re-trains the pre-trained model and checks the seed-0 confusion matrices)
 python reference/python/gen_reference.py    # tests/reference.json
 npm test
 ```
+
+## Notebook
+`notebook/Trabalho2-DL-Executado.ipynb` is the executed notebook of the assignment (same numbers as `reference/resultados/`); `reference/python/trabalho2_dl.py` is the same code as a script.
