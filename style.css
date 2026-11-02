@@ -165,7 +165,7 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .amostras { margin-top: .4rem; }
 #bp-g-fronteira { width: 100%; max-width: 360px; display: block; margin: 0 auto .6rem; border: 1px solid var(--borda); border-radius: 6px; }
 #bp-g-perda { display: block; width: 100%; }
-.num-bp .eq { font-family: "Liberation Mono", Consolas, monospace; font-size: .8rem; background: var(--fundo); border-radius: 4px; padding: .3rem .5rem; margin: .25rem 0; overflow-x: auto; white-space: nowrap; }
+.num-bp .eq { font-family: "Liberation Mono", Consolas, monospace; font-size: .8rem; background: var(--fundo); border-radius: 4px; padding: .3rem .5rem; margin: .25rem 0; overflow-x: auto; white-space: normal; overflow-wrap: break-word; }
 .cols-num { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 
 /* resultados */
