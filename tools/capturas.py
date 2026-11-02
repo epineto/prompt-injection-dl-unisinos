@@ -27,6 +27,9 @@ with sync_playwright() as p:
         for nome, vp in (("desktop", {"width": 1280, "height": 900}), ("mobile", {"width": 390, "height": 800})):
             ctx = b.new_context(viewport=vp)
             pg = ctx.new_page()
+            erros = []
+            pg.on("console", lambda m, e=erros: e.append(m.text) if m.type == "error" else None)
+            pg.on("pageerror", lambda x, e=erros: e.append(str(x)))
             pg.goto(BASE); pg.wait_for_selector('html[data-pronto="1"]')
             pg.evaluate("l => localStorage.setItem('dl-prompt-injection-lang', l)", lang)
             pg.reload(); pg.wait_for_selector('html[data-pronto="1"]')
@@ -36,5 +39,7 @@ with sync_playwright() as p:
                 preparar(pg, s)
                 pg.screenshot(path=str(OUT / f"{nome}-{lang}-{s}.png"), full_page=True)
             ctx.close()
+            assert not erros, f"erros no console ({nome}, {lang}): {erros}"
+            print(nome, lang, "console sem erros")
     b.close()
 print("ok", OUT)

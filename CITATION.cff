@@ -2,13 +2,13 @@ cff-version: 1.2.0
 message: "Se você usar este software, cite-o como abaixo. / If you use this software, please cite it as below."
 title: "Laboratório de Deep Learning: detectando prompt injection com um MLP"
 type: software
-version: 2.0.0
+version: 3.0.0
 date-released: 2026-11-02
 year: 2026
 license: MIT
 url: "https://epineto.github.io/prompt-injection-dl-unisinos/"
 repository-code: "https://github.com/epineto/prompt-injection-dl-unisinos"
-abstract: "Aplicação web estática que reproduz no navegador os experimentos do Trabalho 02 de Deep Learning (PPGCA/Unisinos): detecção de prompt injection em inglês, alemão e português (treino bilíngue; o português é tradução automática, não fala nativa) com um MLP sobre TF-IDF, treino ao vivo, comparação de SGD, Momentum, RMSProp e Adam e backpropagation passo a passo."
+abstract: "Aplicação web estática que reproduz no navegador os experimentos do Trabalho 02 de Deep Learning (PPGCA/Unisinos): detecção de prompt injection em inglês e português (treino bilíngue; o português é tradução automática, não fala nativa; o alemão do deepset original foi descartado) com um MLP sobre TF-IDF, treino ao vivo, comparação de SGD, Momentum, RMSProp e Adam e backpropagation passo a passo."
 keywords:
   - deep learning
   - prompt injection
