@@ -173,7 +173,7 @@ export default {
   'sobre.links': 'Links',
   'sobre.l_repo': 'Repositório no GitHub', 'sobre.l_demo': 'Demonstração (GitHub Pages)', 'sobre.l_reprod': 'Reprodução dos resultados (docs/REPRODUCAO.md)', 'sobre.l_nav': 'Roteiro de navegação (docs/NAVEGACAO.md)', 'sobre.l_script': 'Código Python do trabalho (trabalho2_dl.py)', 'sobre.l_nb': 'Notebook do trabalho (notebook/)',
   'sobre.creditos': 'Créditos',
-  'sobre.creditos_d': 'Epitácio Vicente do Nascimento Neto, PPGCA/Unisinos, Deep Learning 2026/2, Prof. Felipe André Zeiser. Núcleo e interface sem bibliotecas externas, no mesmo padrão do laboratório do Trabalho 2 de Aprendizado por Reforço.',
+  'sobre.creditos_d': 'Epitácio Vicente do Nascimento Neto, PPGCA/Unisinos, Deep Learning 2026/2, Prof. Dr. Felipe André Zeiser. Núcleo e interface sem bibliotecas externas, no mesmo padrão do laboratório do Trabalho 2 de Aprendizado por Reforço.',
   'sobre.licenca': 'Licença e citação',
   'sobre.licenca_d': 'Código sob licença MIT (arquivo <code>LICENSE</code>). Citação: arquivo <code>CITATION.cff</code>. Os conjuntos de dados mantêm as licenças originais, listadas ao lado: deepset e neuralchemy sob Apache-2.0, xTRam1 sem licença declarada e BR-synthetic sob CC-BY-4.0 (com atribuição).',
   'sobre.aulas': 'Aula → seção do laboratório',
@@ -197,7 +197,7 @@ export default {
   'sobre.lic_deepset': 'Apache-2.0 (conforme o cartão do conjunto); somente os textos em inglês são usados (330: 269 de treino e 61 de teste); alemão e demais línguas foram descartados.',
   'sobre.lic_neuralchemy': 'Apache-2.0; amostra estratificada de 300 textos do teste (config. core).',
   'sobre.lic_xtram1': 'licença não declarada no cartão do conjunto (sintético); amostra de 300 textos apenas para demonstração acadêmica.',
-  'rodape.1': 'Epitácio Neto · PPGCA/Unisinos · Deep Learning 2026/2 · Prof. Felipe André Zeiser',
+  'rodape.1': 'Epitácio Neto · PPGCA/Unisinos · Deep Learning 2026/2 · Prof. Dr. Felipe André Zeiser',
   'rodape.2': 'Licença MIT · 100% no navegador, sem coleta de dados',
 
   // --- bilíngue (versão 2) ---

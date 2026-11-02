@@ -97,7 +97,7 @@ Mapa completo, com os valores esperados: [docs/REPRODUCAO.md](docs/REPRODUCAO.md
 - [ai-safety-brazil/prompt-injection-br-synthetic](https://huggingface.co/datasets/ai-safety-brazil/prompt-injection-br-synthetic) (teste): CC-BY-4.0, **com atribuição** a ai-safety-brazil; amostra estratificada de 200 textos (português nativo, sintético).
 
 ## Créditos
-Epitácio Vicente do Nascimento Neto, Programa de Pós-Graduação em Computação Aplicada (PPGCA), Unisinos. Disciplina Deep Learning 2026/2, Prof. Felipe André Zeiser. Código sob licença [MIT](LICENSE).
+Epitácio Vicente do Nascimento Neto, Programa de Pós-Graduação em Computação Aplicada (PPGCA), Unisinos. Disciplina Deep Learning 2026/2, Prof. Dr. Felipe André Zeiser. Código sob licença [MIT](LICENSE).
 
 ## Como citar
 Ver [CITATION.cff](CITATION.cff).
@@ -126,4 +126,4 @@ Ver [CITATION.cff](CITATION.cff).
 
 **Known limits:** browser training differs from PyTorch in initialization and shuffling (close, not identical numbers); the Portuguese is automatic translation, not native speech, and the model does not generalize to native Portuguese (BR-synthetic: almost everything labelled injection, F1 0.571); tiny base: 61 test texts per language, so results are indicative; out-of-distribution sets are samples here (300, 300 and 200 texts; full-set Python numbers are shown separately); the MLP’s gain over logistic regression is small (about 3 F1 points); only public datasets are used. **Licenses:** deepset and neuralchemy Apache-2.0 (the Portuguese translation is a derivative work of deepset, with attribution); xTRam1 declares no license on its card (check before redistributing the sample); BR-synthetic (ai-safety-brazil) CC-BY-4.0, with attribution.
 
-**Credits:** Epitácio Vicente do Nascimento Neto, PPGCA/Unisinos; Prof. Felipe André Zeiser. License: [MIT](LICENSE). Citation: [CITATION.cff](CITATION.cff).
+**Credits:** Epitácio Vicente do Nascimento Neto, PPGCA/Unisinos; Prof. Dr. Felipe André Zeiser. License: [MIT](LICENSE). Citation: [CITATION.cff](CITATION.cff).

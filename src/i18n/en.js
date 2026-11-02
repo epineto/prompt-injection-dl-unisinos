@@ -173,7 +173,7 @@ export default {
   'sobre.links': 'Links',
   'sobre.l_repo': 'GitHub repository', 'sobre.l_demo': 'Demo (GitHub Pages)', 'sobre.l_reprod': 'Reproducing the results (docs/REPRODUCTION.md)', 'sobre.l_nav': 'Navigation guide (docs/NAVEGACAO.md)', 'sobre.l_script': 'Assignment Python code (trabalho2_dl.py)', 'sobre.l_nb': 'Assignment notebook (notebook/)',
   'sobre.creditos': 'Credits',
-  'sobre.creditos_d': 'Epitácio Vicente do Nascimento Neto, PPGCA/Unisinos, Deep Learning 2026/2, Prof. Felipe André Zeiser. Core and interface without external libraries, following the pattern of the Assignment 2 Reinforcement Learning lab.',
+  'sobre.creditos_d': 'Epitácio Vicente do Nascimento Neto, PPGCA/Unisinos, Deep Learning 2026/2, Prof. Dr. Felipe André Zeiser. Core and interface without external libraries, following the pattern of the Assignment 2 Reinforcement Learning lab.',
   'sobre.licenca': 'License and citation',
   'sobre.licenca_d': 'Code under the MIT license (<code>LICENSE</code> file). Citation: <code>CITATION.cff</code>. Datasets keep their original licenses, listed alongside: deepset and neuralchemy under Apache-2.0, xTRam1 with no declared license and BR-synthetic under CC-BY-4.0 (with attribution).',
   'sobre.aulas': 'Lecture → lab section',
@@ -197,7 +197,7 @@ export default {
   'sobre.lic_deepset': 'Apache-2.0 (per the dataset card); only the English texts are used (330: 269 training and 61 test); German and other languages were discarded.',
   'sobre.lic_neuralchemy': 'Apache-2.0; stratified sample of 300 test texts (core config).',
   'sobre.lic_xtram1': 'license not declared on the dataset card (synthetic); 300-text sample for academic demonstration only.',
-  'rodape.1': 'Epitácio Neto · PPGCA/Unisinos · Deep Learning 2026/2 · Prof. Felipe André Zeiser',
+  'rodape.1': 'Epitácio Neto · PPGCA/Unisinos · Deep Learning 2026/2 · Prof. Dr. Felipe André Zeiser',
   'rodape.2': 'MIT license · 100% in the browser, no data collection',
 
   // --- bilíngue (versão 2) ---

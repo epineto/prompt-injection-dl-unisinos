@@ -48,7 +48,7 @@ main { max-width: var(--larg); margin: 0 auto; padding: 1.1rem 1rem 2rem; outlin
 .lead { color: var(--texto-suave); margin: 0 0 1rem; }
 .aviso { background: #FFF4E0; border: 1px solid #E5B567; color: #5A3A00; padding: .6rem .8rem; border-radius: 6px; }
 .rodape { background: var(--azul); color: #D5DAF5; text-align: center; padding: 1rem; font-size: .85rem; }
-.rodape p { margin: .15rem 0; }
+.rodape p { margin: .15rem 0; text-align: center; }
 
 /* cartões e grades */
 .cartao { background: var(--cartao); border-radius: 10px; box-shadow: var(--sombra); padding: 1rem 1.1rem; margin-bottom: 1rem; min-width: 0; }
