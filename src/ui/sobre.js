@@ -13,9 +13,9 @@ export function iniciarSobre(S) {
       .map(([h, k]) => `<li><a href="${h}" target="_blank" rel="noopener">${esc(t(k))}</a></li>`).join('');
     $('#sobre-aulas').innerHTML = `<thead><tr><th>${t('sobre.t_aula')}</th><th>${t('sobre.t_conteudo')}</th><th>${t('sobre.t_secao')}</th></tr></thead><tbody>${AULAS.map(([n, secs]) =>
       `<tr><th scope="row">${t('sobre.aula')} ${n}</th><td>${t('sobre.a' + n)}</td><td>${secs.split(' ').map((s) => `<a href="${s}">${s}</a>`).join(' ')}</td></tr>`).join('')}</tbody>`;
-    $('#sobre-limites').innerHTML = [1, 2, 3, 4, 5, 6, 7].map((i) => `<li>${t('sobre.lim' + i)}</li>`).join('');
+    $('#sobre-limites').innerHTML = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `<li>${t('sobre.lim' + i)}</li>`).join('');
     const f = S.ds.fontes;
-    $('#sobre-dados').innerHTML = ['deepset', 'neuralchemy', 'xtram1'].map((k) => `<li><a href="${f[k].url}" target="_blank" rel="noopener">${esc(f[k].nome)}</a>: ${esc(t('sobre.lic_' + k))}</li>`).join('');
+    $('#sobre-dados').innerHTML = ['deepset', 'deepset_pt', 'neuralchemy', 'xtram1', 'br'].map((k) => `<li><a href="${f[k].url}" target="_blank" rel="noopener">${esc(f[k].nome)}</a>: ${esc(t('sobre.lic_' + k))}</li>`).join('');
   }
   onLang(render);
   render();
