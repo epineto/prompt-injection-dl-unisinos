@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Laboratório de Deep Learning: prompt injection com um MLP</title>
-<meta name="description" content="Laboratório interativo de Deep Learning: detecte prompt injection em inglês, alemão e português com um MLP sobre TF-IDF, treine do zero no navegador, compare SGD, Momentum, RMSProp e Adam e veja o backpropagation passo a passo. Trabalho da Unisinos.">
+<meta name="description" content="Laboratório interativo de Deep Learning: detecte prompt injection em inglês e português com um MLP sobre TF-IDF, treine do zero no navegador, compare SGD, Momentum, RMSProp e Adam e veja o backpropagation passo a passo. Trabalho da Unisinos.">
 <meta name="theme-color" content="#1D2369">
 <meta name="author" content="Epitácio Vicente do Nascimento Neto">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
@@ -15,7 +15,7 @@
 <meta property="og:locale" content="pt_BR">
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:title" content="Laboratório de Deep Learning: detectando prompt injection com um MLP">
-<meta property="og:description" content="Texto (EN, DE, PT) → tokens → TF-IDF → MLP → probabilidade. Teste, treine do zero, compare otimizadores e veja o backpropagation, direto no navegador.">
+<meta property="og:description" content="Texto (EN, PT) → tokens → TF-IDF → MLP → probabilidade. Teste, treine do zero, compare otimizadores e veja o backpropagation, direto no navegador.">
 <meta property="og:url" content="https://epineto.github.io/prompt-injection-dl-unisinos/">
 <meta property="og:image" content="https://epineto.github.io/prompt-injection-dl-unisinos/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -66,7 +66,7 @@
     <ul class="problema">
       <li data-i18n-html="intro.p1">Aplicações com modelos de linguagem recebem <strong>texto não confiável</strong> de quem as usa.</li>
       <li data-i18n-html="intro.p2">Um <strong>prompt injection</strong> tenta fazer o modelo ignorar as instruções originais (por exemplo, “ignore as instruções anteriores e…”).</li>
-      <li data-i18n-html="intro.p3">Aqui, uma rede neural simples (um <strong>MLP</strong>) aprende a barrar esse texto em <strong>inglês, alemão e português</strong>: um primeiro filtro barato e rápido, que se pode treinar, testar e abrir por dentro.</li>
+      <li data-i18n-html="intro.p3">Aqui, uma rede neural simples (um <strong>MLP</strong>) aprende a barrar esse texto em <strong>inglês e português</strong>: um primeiro filtro barato e rápido, que se pode treinar, testar e abrir por dentro.</li>
     </ul>
   </div><div class="hero-nums" id="hero-nums"></div></div></div>
 
@@ -99,7 +99,7 @@
 <!-- ============================ TESTAR ============================ -->
 <section id="testar" class="sec" aria-labelledby="testar-t">
   <h2 id="testar-t" data-i18n="testar.t">Testar um texto</h2>
-  <p class="lead just" data-i18n="testar.lead">O modelo abaixo já vem treinado (Adam, 32 neurônios, taxa 0,001, semente 0, treino bilíngue: o modelo final do trabalho). Digite um texto em inglês, alemão ou português e veja, em tempo real, a probabilidade de ser uma injeção.</p>
+  <p class="lead just" data-i18n="testar.lead">O modelo abaixo já vem treinado (Adam, 8 neurônios, taxa 0,001, semente 0, treino bilíngue: o modelo final do trabalho). Digite um texto em inglês ou português e veja, em tempo real, a probabilidade de ser uma injeção.</p>
 
   <div class="grade2">
     <div class="cartao">
@@ -108,7 +108,7 @@
       <textarea id="t-texto" rows="5" spellcheck="false" maxlength="4000"></textarea>
       <p class="mini" data-i18n="testar.exemplos">Exemplos prontos:</p>
       <div class="exemplos" id="t-exemplos" role="group" aria-label="Exemplos" data-i18n-attr="aria-label:testar.exemplos"></div>
-      <p class="mini just" data-i18n="testar.pt_nota">Nota sobre o idioma: o modelo foi treinado com textos em inglês e alemão (deepset) e com a tradução desses mesmos textos para o português do Brasil. A tradução é automática (feita por LLM e verificada por amostragem), não é fala nativa; por isso o português nativo não foi validado. Em textos de estrutura diferente da do conjunto (por exemplo, contexto longo mais instrução, como no BR-synthetic), o modelo não generaliza. Palavras fora do vocabulário aparecem acinzentadas e não contribuem.</p>
+      <p class="mini just" data-i18n="testar.pt_nota">Nota sobre as línguas: o modelo foi treinado com os textos em inglês do deepset e com a tradução desses mesmos textos para o português do Brasil. O deepset original mistura inglês e alemão (e poucas outras línguas); os textos em alemão e em outras línguas foram descartados, não convertidos. A tradução para o português é automática (feita por modelo de linguagem e verificada por amostragem), não é fala nativa; por isso o português nativo não foi validado. Em textos de estrutura diferente da do conjunto (por exemplo, contexto longo mais instrução, como no BR-synthetic), o modelo não generaliza. Palavras fora do vocabulário aparecem acinzentadas e não contribuem.</p>
       <div class="campo">
         <label for="t-limiar"><span data-i18n="testar.limiar">Limiar de decisão</span>: <output id="t-limiar-v">0,50</output></label>
         <input type="range" id="t-limiar" min="0.05" max="0.95" step="0.01" value="0.5">
@@ -143,7 +143,7 @@
 
   <div class="cartao">
     <h3 data-i18n="testar.metricas">Como o modelo se sai nos conjuntos de teste (por língua e fora da distribuição)</h3>
-    <p class="mini just" data-i18n-html="testar.metricas_d"><strong>O que olhar:</strong> as matrizes mudam com o limiar acima. Em-distribuição (deepset, EN/DE e PT traduzido) o filtro vai bem; o teste PT é a tradução do mesmo conjunto, logo mais fácil. Fora dela (neuralchemy, xTRam1) a qualidade cai e, no BR-synthetic (português nativo, textos longos), o modelo classifica tudo como injeção (no Python, revocação e taxa de falsos positivos iguais a 1), sem generalizar (Aula 1: desconfiar de métrica perfeita; Aula 5: com classes desbalanceadas, usar F1).</p>
+    <p class="mini just" data-i18n-html="testar.metricas_d"><strong>O que olhar:</strong> as matrizes mudam com o limiar acima. Em-distribuição (deepset, EN e PT traduzido; 61 textos cada, logo resultados indicativos) o filtro vai bem; o teste PT é a tradução do mesmo conjunto, logo mais fácil. Fora dela (neuralchemy, xTRam1) a qualidade cai e, no BR-synthetic (português nativo, textos longos), o modelo classifica quase tudo como injeção (no Python, revocação e taxa de falsos positivos de 0,99), sem generalizar (Aula 1: desconfiar de métrica perfeita; Aula 5: com classes desbalanceadas, usar F1).</p>
     <div id="t-conj" class="grade3"></div>
   </div>
 </section>
@@ -151,21 +151,21 @@
 <!-- ============================ TREINAR ============================ -->
 <section id="treinar" class="sec" aria-labelledby="treinar-t">
   <h2 id="treinar-t" data-i18n="treinar.t">Treinar do zero</h2>
-  <p class="lead just" data-i18n="treinar.lead">Uma rede nova é treinada aqui, ao vivo, com as amostras de treino da língua escolhida (872 no treino bilíngue; 436 só em EN/DE ou só em PT), em um Web Worker, sem servidor. Os valores iniciais são os do trabalho; mude um de cada vez e veja o efeito.</p>
+  <p class="lead just" data-i18n="treinar.lead">Uma rede nova é treinada aqui, ao vivo, com as amostras de treino da língua escolhida (432 no treino bilíngue; 216 só em EN ou só em PT), em um Web Worker, sem servidor. Os valores iniciais são os do trabalho; mude um de cada vez e veja o efeito.</p>
   <div class="grade-treino">
     <form class="cartao" id="tr-form" autocomplete="off">
       <h3 data-i18n="treinar.cfg">Configuração</h3>
       <div class="campo"><label for="tr-lang" data-i18n="treinar.lang">Línguas de treino</label>
-        <select id="tr-lang"><option value="bil" data-i18n="treinar.lang_bil" selected>Bilíngue (EN/DE + PT)</option><option value="orig" data-i18n="treinar.lang_orig">Só EN/DE</option><option value="pt" data-i18n="treinar.lang_pt">Só PT (tradução)</option></select></div>
+        <select id="tr-lang"><option value="bil" data-i18n="treinar.lang_bil" selected>Bilíngue (EN + PT)</option><option value="orig" data-i18n="treinar.lang_orig">Só EN</option><option value="pt" data-i18n="treinar.lang_pt">Só PT (tradução)</option></select></div>
       <p class="mini just" id="tr-lang-d"></p>
       <div class="campo"><label for="tr-otim" data-i18n="treinar.otim">Otimizador</label>
         <select id="tr-otim"><option value="SGD">SGD</option><option value="SGD+Momentum">SGD + Momentum</option><option value="RMSProp">RMSProp</option><option value="Adam" selected>Adam</option></select></div>
       <div class="campo"><label for="tr-lr" data-i18n="treinar.lr">Taxa de aprendizado</label>
         <input id="tr-lr" type="text" inputmode="decimal" value="0,001"></div>
       <div class="campo"><label for="tr-h" data-i18n="treinar.h">Neurônios ocultos (H)</label>
-        <input id="tr-h" type="number" min="1" max="512" step="1" value="32"></div>
+        <input id="tr-h" type="number" min="1" max="512" step="1" value="8"></div>
       <div class="campo"><label for="tr-batch" data-i18n="treinar.batch">Tamanho do lote</label>
-        <input id="tr-batch" type="number" min="1" max="872" step="1" value="32"></div>
+        <input id="tr-batch" type="number" min="1" max="432" step="1" value="32"></div>
       <div class="campo"><label for="tr-ep" data-i18n="treinar.ep">Épocas</label>
         <input id="tr-ep" type="number" min="1" max="200" step="1" value="40"></div>
       <div class="campo"><label for="tr-seed" data-i18n="treinar.seed">Semente</label>
@@ -194,14 +194,14 @@
     <h3 data-i18n="treinar.res">Resultado do treino</h3>
     <p id="tr-res-txt" class="just"></p>
     <div id="tr-res-tab" class="rolagem"></div>
-    <p class="mini just" data-i18n-html="treinar.res_d"><strong>O que olhar:</strong> compare o F1 nos testes EN/DE e PT (em-distribuição) com o dos conjuntos fora da distribuição, em especial o BR-synthetic (português nativo). O treino aqui usa a mesma divisão do trabalho, mas o embaralhamento e a inicialização do JavaScript diferem dos do PyTorch: os números ficam próximos, não idênticos.</p>
+    <p class="mini just" data-i18n-html="treinar.res_d"><strong>O que olhar:</strong> compare o F1 nos testes EN e PT (em-distribuição, 61 textos cada) com o dos conjuntos fora da distribuição, em especial o BR-synthetic (português nativo). O treino aqui usa a mesma divisão do trabalho, mas o embaralhamento e a inicialização do JavaScript diferem dos do PyTorch: os números ficam próximos, não idênticos.</p>
   </div>
 </section>
 
 <!-- ============================ OTIMIZADORES ============================ -->
 <section id="otimizadores" class="sec" aria-labelledby="otim-t">
   <h2 id="otim-t" data-i18n="otim.t">Comparar otimizadores</h2>
-  <p class="lead just" data-i18n="otim.lead">Os quatro otimizadores da Aula 4 treinam a mesma rede (treino bilíngue), com os mesmos dados e a mesma semente. Cada um usa a taxa escolhida pela perda de validação no trabalho: SGD 1, Momentum 0,1, RMSProp 0,01 e Adam 0,001.</p>
+  <p class="lead just" data-i18n="otim.lead">Os quatro otimizadores da Aula 4 treinam a mesma rede (H = 8, treino bilíngue), com os mesmos dados e a mesma semente. Cada um usa a taxa escolhida pela perda de validação no trabalho: SGD 1, Momentum 0,1, RMSProp 0,001 e Adam 0,001.</p>
   <form class="cartao" id="ot-form" autocomplete="off">
     <div class="linha-ctrl">
       <fieldset class="campo-radio"><legend data-i18n="otim.mult">Multiplicar a taxa por</legend>
@@ -209,12 +209,12 @@
         <label><input type="radio" name="ot-mult" value="1" checked> ×1</label>
         <label><input type="radio" name="ot-mult" value="10"> ×10</label>
       </fieldset>
-      <div class="campo chip-opt"><label class="chip-check"><input type="checkbox" id="ot-adam-rapido"> <span data-i18n="otim.adam_rapido">Adam com lr 0,01</span></label></div>
+      <div class="campo chip-opt"><label class="chip-check"><input type="checkbox" id="ot-adam-rapido"> <span data-i18n="otim.adam_rapido">Adam e RMSProp com lr 0,01</span></label></div>
       <div class="campo"><label for="ot-seed" data-i18n="treinar.seed">Semente</label><input id="ot-seed" type="number" min="0" max="9999" value="0"></div>
       <div class="campo"><label for="ot-ep" data-i18n="treinar.ep">Épocas</label><input id="ot-ep" type="number" min="1" max="200" value="40"></div>
       <div class="botoes"><button type="submit" class="btn primario" id="ot-go" data-i18n="otim.go">Comparar</button><button type="button" class="btn" id="ot-stop" disabled data-i18n="treinar.stop">Parar</button></div>
     </div>
-    <p class="mini just" data-i18n="otim.adam_rapido_d">Troca a taxa do Adam de 0,001 para 0,01: no trabalho, a perda de validação fica equivalente e o mínimo vem em poucas épocas.</p>
+    <p class="mini just" data-i18n="otim.adam_rapido_d">Troca a taxa do Adam e do RMSProp de 0,001 para 0,01: no trabalho, os dois chegam ao mínimo de validação em 2 a 3 épocas, mas com perda de validação maior (Adam 0,395 contra 0,362; RMSProp 0,381 contra 0,378).</p>
     <p class="mini just" data-i18n-html="otim.mult_d"><strong>O que olhar:</strong> com ×10 a taxa fica grande demais (oscilações e divergência); com ×0,1, pequena demais (lentidão). Cada otimizador tem a sua faixa boa (Aula 4).</p>
     <ul id="ot-status" class="status-otim"></ul>
     <p id="ot-aviso" class="aviso" role="alert" hidden></p>
@@ -278,7 +278,7 @@
 <!-- ============================ RESULTADOS ============================ -->
 <section id="resultados" class="sec" aria-labelledby="res-t">
   <h2 id="res-t" data-i18n="res.t">Resultados do trabalho</h2>
-  <p class="lead just" data-i18n="res.lead">Tabelas e gráficos do relatório, lidos de data/resultados.json (exportado dos CSV gerados pelo código Python). Valores médios de 5 sementes (0 a 4), com desvio-padrão quando indicado. O treino é bilíngue (EN/DE + PT, tradução automática); o teste só foi usado ao final e todas as escolhas usaram a validação.</p>
+  <p class="lead just" data-i18n="res.lead">Tabelas e gráficos do relatório, lidos de data/resultados.json (exportado dos CSV gerados pelo código Python). Valores médios de 5 sementes (0 a 4), com desvio-padrão quando indicado. O treino é bilíngue (EN + PT, tradução automática); os testes têm 61 textos por língua, então os resultados são indicativos. O teste só foi usado ao final e todas as escolhas usaram a validação.</p>
   <div id="res-corpo"></div>
 </section>
 
@@ -319,7 +319,7 @@ docs/        reprodução, navegação e capturas</code></pre>
   </div>
   <div class="grade2">
     <div class="cartao"><h3 data-i18n="sobre.limites">Limitações conhecidas</h3><ul class="lista" id="sobre-limites"></ul></div>
-    <div class="cartao"><h3 data-i18n="sobre.dados">Dados e licenças</h3><p class="mini just" data-i18n="sobre.aviso_pt">Aviso: o português do treino e do teste PT é tradução automática (por LLM, verificada por amostragem), não fala nativa; é obra derivada do deepset (Apache-2.0), com atribuição.</p><ul class="lista" id="sobre-dados"></ul></div>
+    <div class="cartao"><h3 data-i18n="sobre.dados">Dados e licenças</h3><p class="mini just" data-i18n="sobre.obs_deepset">Observação sobre o deepset: o conjunto original mistura inglês e alemão (e poucas outras línguas, como espanhol, croata e francês). O alemão e as demais línguas foram descartados, não convertidos nem traduzidos; restam 330 textos em inglês (269 de treino e 61 de teste). Só esses textos e a sua tradução automática para o português entram no laboratório. Com testes de 61 textos por língua, os resultados são indicativos.</p><p class="mini just" data-i18n="sobre.aviso_pt">Aviso: o português do treino e do teste PT é tradução automática (por modelo de linguagem, verificada por amostragem), não fala nativa; é obra derivada do deepset (Apache-2.0), com atribuição.</p><ul class="lista" id="sobre-dados"></ul></div>
   </div>
 </section>
 </main>

@@ -7,13 +7,13 @@ import { t, fmt, fmtM, onLang } from './i18n.js';
 import { GraficoLinhas } from './graficos.js';
 import { iniciarTreino } from './executor.js';
 
-export const PADRAO = { treino: 'bil', otimizador: 'Adam', lr: 0.001, H: 32, batch: 32, epocas: 40, semente: 0 };
+export const PADRAO = { treino: 'bil', otimizador: 'Adam', lr: 0.001, H: 8, batch: 32, epocas: 40, semente: 0 };
 
 export function lerConfig(ids) {
   const g = (k) => $('#' + ids[k]);
   const cfg = { treino: g('lang').value, otimizador: g('otim').value, lr: lerNumero(g('lr').value), H: Number(g('h').value), batch: Number(g('batch').value), epocas: Number(g('ep').value), semente: Number(g('seed').value) };
   const int = (v, a, b) => Number.isInteger(v) && v >= a && v <= b;
-  const ok = cfg.lr > 0 && cfg.lr <= 100 && int(cfg.H, 1, 512) && int(cfg.batch, 1, 872) && ['bil', 'orig', 'pt'].includes(cfg.treino) && int(cfg.epocas, 1, 200) && int(cfg.semente, 0, 9999);
+  const ok = cfg.lr > 0 && cfg.lr <= 100 && int(cfg.H, 1, 512) && int(cfg.batch, 1, 432) && ['bil', 'orig', 'pt'].includes(cfg.treino) && int(cfg.epocas, 1, 200) && int(cfg.semente, 0, 9999);
   return ok ? cfg : null;
 }
 

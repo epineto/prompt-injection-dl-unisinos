@@ -1,9 +1,10 @@
 // Seção #otimizadores: SGD × Momentum × RMSProp × Adam, mesma semente e mesmos dados, 4 workers em paralelo.
-import { NOMES, LR_TRABALHO, LR_ADAM_RAPIDO } from '../core/otimizadores.js';
+import { NOMES, LR_TRABALHO, LR_RAPIDO, COM_LR_RAPIDO } from '../core/otimizadores.js';
 import { $, COR_OTIM, NOME_OTIM, NOME_PY } from './util.js';
 import { t, fmt, fmtM, onLang } from './i18n.js';
 import { GraficoLinhas } from './graficos.js';
 import { iniciarTreino } from './executor.js';
+import { parametrosRef } from './ref_otim.js';
 
 export function iniciarOtimizadores(S) {
   const gT = new GraficoLinhas($('#ot-g-treino'), { fmtY: (v) => fmt(v, 2) });
@@ -26,7 +27,7 @@ export function iniciarOtimizadores(S) {
     const lg = $('#ot-legenda');
     lg.innerHTML = NOMES.map((o) => `<span><i style="background:${COR_OTIM[o]}"></i>${NOME_OTIM[o]} (${t('otim.lr')} ${fmtM(lrDe(o), 4)})</span>`).join('') + `<span class="mini">${t('otim.corte', { y: fmt(YMAX, 1) })}</span>`;
   }
-  const lrBase = (o, rapido) => (o === 'Adam' && rapido ? LR_ADAM_RAPIDO : LR_TRABALHO[o]);
+  const lrBase = (o, rapido) => (COM_LR_RAPIDO.includes(o) && rapido ? LR_RAPIDO : LR_TRABALHO[o]);
   const rapido = () => $('#ot-adam-rapido').checked;
   const lrDe = (o) => lrBase(o, estado ? estado.rapido : rapido()) * (estado ? estado.mult : mult());
 
@@ -47,7 +48,7 @@ export function iniciarOtimizadores(S) {
     const rap = rapido();
     estado = { total: epocas, mult: m, rapido: rap, cv: Object.fromEntries(NOMES.map((o) => [o, { treino: [], val: [] }])), melhorEp: {} };
     emExecucao(true); desenhar(); status();
-    execs = NOMES.map((o) => iniciarTreino({ otimizador: o, lr: lrBase(o, rap) * m, H: 32, batch: 32, epocas, semente, treino: 'bil' }, (e) => {
+    execs = NOMES.map((o) => iniciarTreino({ otimizador: o, lr: lrBase(o, rap) * m, H: 8, batch: 32, epocas, semente, treino: 'bil' }, (e) => {
       estado.cv[o].treino.push(e.treino); estado.cv[o].val.push(e.val); estado.melhorEp[o] = e.melhorEp;
       if (!estado._raf) estado._raf = requestAnimationFrame(() => { estado._raf = 0; desenhar(); status(); });
     }));
@@ -82,9 +83,7 @@ export function iniciarOtimizadores(S) {
       h += `<tr><th scope="row"><span class="sw" style="background:${COR_OTIM[n]}"></span>${NOME_OTIM[n]}</th><td>${fmtM(r.lr, 4)}</td><td>${fmt(r.melhor_epoca, 1)} ± ${fmt(r.melhor_epoca_dp, 1)}</td><td>${fmt(r.val_loss, 3)}</td><td>${f('bil')}</td><td>${f('en')}</td><td>${f('pt')}</td><td>${fmt(r.auc[F.bil][0], 3)}</td></tr>`;
     }
     $('#ot-ref').innerHTML = h + '</tbody></table>';
-    const g = (n, lr) => S.res.grade_lr.find((x) => x.otimizador === n && x.lr === lr);
-    $('#ot-ref-d').textContent = t('otim.ref_d', { rm: fmt(o.RMSProp.melhor_epoca, 1), cl: fmt((o.SGD.melhor_epoca + o['SGD+Momentum'].melhor_epoca) / 2, 0), ad: fmt(o.Adam.melhor_epoca, 0),
-      v01: fmt(g('Adam', 0.01).val_loss, 3), v001: fmt(g('Adam', 0.001).val_loss, 3), e01: fmt(g('Adam', 0.01).melhor_epoca, 1), vs: fmt(o.SGD.val_loss, 3), vm: fmt(o['SGD+Momentum'].val_loss, 3) });
+    $('#ot-ref-d').textContent = t('otim.ref_d', parametrosRef(S.res));
   }
   onLang(() => { desenhar(); status(); tabela(); referencia(); });
   desenhar(); status(); referencia();

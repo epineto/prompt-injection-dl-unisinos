@@ -34,7 +34,7 @@ function introAoVivo(S) {
   $('#pipe-c-d').textContent = I18N.t('intro.pipe.c_d', { v: nV });
   $('#pipe-d-d').textContent = I18N.t('intro.pipe.d_d', { v: nV });
   const R = S.res;
-  $('#hero-nums').innerHTML = [[Number(R.info.parametros_mlp).toLocaleString(I18N.t('lang.loc')), 'intro.n1'], [I18N.fmt(R.info.latencia_mlp_ms_por_texto, 2) + ' ms', 'intro.n2'], [I18N.fmt(R.otimizadores.Adam.f1[NOME_PY.bil][0], 3), 'intro.n3']]
+  $('#hero-nums').innerHTML = [[Number(R.info.parametros_mlp).toLocaleString(I18N.t('lang.loc')), 'intro.n1'], [I18N.fmt(R.info.latencia_mlp_ms_por_texto, 2) + ' ms', 'intro.n2'], [I18N.fmt(R.final.find((x) => x.modelo.startsWith('MLP') && x.conjunto === NOME_PY.bil).f1, 3), 'intro.n3']]
     .map(([v, k]) => `<div><strong>${v}</strong><span>${I18N.t(k)}</span></div>`).join('');
   $('#pipe-e').textContent = I18N.fmt(a.p * 100, 1) + '%';
 }

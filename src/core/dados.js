@@ -1,11 +1,11 @@
 // Prepara as matrizes esparsas de todos os conjuntos a partir de dataset.json e vocab.json.
-// treino: 'bil' (original EN/DE + tradução PT, vocabulário de data/vocab.json), 'orig' (só EN/DE) ou 'pt' (só PT);
+// treino: 'bil' (original EN + tradução PT, vocabulário de data/vocab.json), 'orig' (só EN) ou 'pt' (só PT);
 // nos dois últimos o vocabulário é reajustado só nos textos escolhidos, como no experimento de línguas do Python.
 import { criarVetorizador, vetorizar, ajustar } from './texto.js';
 
 export const TREINOS = ['bil', 'orig', 'pt'];
 
-// Nomes dos conjuntos de avaliação: en = teste deepset EN/DE; pt = teste deepset traduzido; bil = os dois concatenados.
+// Nomes dos conjuntos de avaliação: en = teste deepset EN; pt = teste deepset traduzido; bil = os dois concatenados.
 export const CONJUNTOS = ['en', 'pt', 'bil', 'neuralchemy', 'xtram1', 'br'];
 
 function recortar(c, treino) {
@@ -27,7 +27,7 @@ export function prepararDados(ds, vocab, modo = 'tfidf', treino = 'bil') {
   };
 }
 
-// Conjuntos de avaliação como lista [chave, X, y]; "bil" é o teste EN/DE seguido do teste PT (232 textos).
+// Conjuntos de avaliação como lista [chave, X, y]; "bil" é o teste EN seguido do teste PT (122 textos).
 export function conjuntosDeAvaliacao(d) {
   return [['en', d.Xte, d.yte], ['pt', d.Xtp, d.ytp], ['bil', [...d.Xte, ...d.Xtp], Float64Array.from([...d.yte, ...d.ytp])],
     ['neuralchemy', d.Xnc, d.ync], ['xtram1', d.Xxt, d.yxt], ['br', d.Xbr, d.ybr]];
