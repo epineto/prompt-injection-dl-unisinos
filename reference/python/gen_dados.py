@@ -22,7 +22,8 @@ RES = Path(os.environ.get("RESULTADOS", RAIZ / "reference" / "resultados"))
 DATA = RAIZ / "data"
 DATA.mkdir(exist_ok=True)
 N_AMOSTRA = 300
-H, LR, EPOCAS, BATCH, SEMENTE = 32, 0.01, 40, 32, 0
+N_BR = 200
+H, LR, EPOCAS, BATCH, SEMENTE = 32, 0.001, 40, 32, 0
 
 
 def amostra_estratificada(textos, y, n, semente=I.SEMENTE_DIVISAO):
@@ -57,49 +58,63 @@ def num(x):
 
 def main():
     D = I.carregar_dados()
-    (tr_t, tr_y), (va_t, va_y) = I.dividir_treino_val(*D["treino_total"])
+    itr, iva = I.dividir_treino_val(D["treino_total"][1])
+    y0 = D["treino_total"][1]
+    tr0 = [D["treino_total"][0][i] for i in itr]; trp = [D["treino_total_pt"][i] for i in itr]
+    va0 = [D["treino_total"][0][i] for i in iva]; vap = [D["treino_total_pt"][i] for i in iva]
+    tr_t, tr_y = tr0 + trp, np.concatenate([y0[itr], y0[itr]])      # treino bilíngue: original (436) + tradução (436)
+    va_t, va_y = va0 + vap, np.concatenate([y0[iva], y0[iva]])
     te_t, te_y = D["teste"]
+    tp_t, tp_y = D["teste_pt"]
     nc_t, nc_y = amostra_estratificada(D["neuralchemy"][0], D["neuralchemy"][1], N_AMOSTRA)
     xt_t, xt_y = amostra_estratificada(D["xtram1"][0], D["xtram1"][1], N_AMOSTRA)
-    assert (len(tr_t), len(va_t), len(te_t)) == (436, 110, 116)
+    br_t, br_y = amostra_estratificada(D["br_nativo"][0], D["br_nativo"][1], N_BR)
+    assert (len(tr_t), len(va_t), len(te_t), len(tp_t)) == (872, 220, 116, 116)
 
     dataset = {
-        "meta": {"semente_divisao": I.SEMENTE_DIVISAO, "amostra": N_AMOSTRA,
-                 "nota": "treino/validação/teste do deepset com as mesmas divisões do trabalho (436/110/116); neuralchemy e xTRam1 são amostras estratificadas e determinísticas de 300 textos."},
+        "meta": {"semente_divisao": I.SEMENTE_DIVISAO, "amostra": N_AMOSTRA, "amostra_br": N_BR,
+                 "nota": "Treino 872 = 436 originais (EN/DE) + 436 traduções (PT); validação 220 = 110 + 110; os primeiros n_orig textos são os originais e os demais, as traduções alinhadas (um texto e a sua tradução ficam do mesmo lado). Testes do deepset: EN/DE (116) e PT (116). neuralchemy e xTRam1: 300 textos; BR-synthetic: 200 textos (amostras estratificadas e determinísticas)."},
         "fontes": {
             "deepset": {"nome": "deepset/prompt-injections", "url": "https://huggingface.co/datasets/deepset/prompt-injections", "licenca": "Apache-2.0 (conforme o cartão do conjunto)"},
+            "deepset_pt": {"nome": "deepset/prompt-injections, tradução para pt-BR", "url": "https://github.com/epineto/prompt-injection-dl-unisinos/blob/main/data/deepset_pt.json", "licenca": "obra derivada do deepset (Apache-2.0), com atribuição; tradução automática por LLM, verificada por amostragem; não é fala nativa"},
             "neuralchemy": {"nome": "neuralchemy/Prompt-injection-dataset (core, test)", "url": "https://huggingface.co/datasets/neuralchemy/Prompt-injection-dataset", "licenca": "Apache-2.0"},
             "xtram1": {"nome": "xTRam1/safe-guard-prompt-injection (test)", "url": "https://huggingface.co/datasets/xTRam1/safe-guard-prompt-injection", "licenca": "não declarada no cartão do conjunto; sintético; amostra de 300 textos apenas para demonstração acadêmica"},
+            "br": {"nome": "ai-safety-brazil/prompt-injection-br-synthetic (test)", "url": "https://huggingface.co/datasets/ai-safety-brazil/prompt-injection-br-synthetic", "licenca": "CC-BY-4.0; atribuição: ai-safety-brazil; amostra estratificada de 200 textos; português nativo, sintético"},
         },
-        "treino": {"texto": tr_t, "y": [int(v) for v in tr_y]},
-        "validacao": {"texto": va_t, "y": [int(v) for v in va_y]},
+        "treino": {"texto": tr_t, "y": [int(v) for v in tr_y], "n_orig": len(tr0)},
+        "validacao": {"texto": va_t, "y": [int(v) for v in va_y], "n_orig": len(va0)},
         "teste": {"texto": te_t, "y": [int(v) for v in te_y]},
+        "teste_pt": {"texto": tp_t, "y": [int(v) for v in tp_y]},
         "neuralchemy": {"texto": nc_t, "y": nc_y},
         "xtram1": {"texto": xt_t, "y": xt_y},
+        "br": {"texto": br_t, "y": br_y},
     }
     (DATA / "dataset.json").write_text(json.dumps(dataset, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
     V = I.Vetorizador(max_vocab=2000, min_df=2).ajustar(tr_t)
     n = len(V.vocab)
-    assert n == 983
+    assert n == 1863
     vocab = {"termos": V.vocab, "idf": [float(f"{x:.12g}") for x in V.idf], "n_documentos": len(tr_t), "min_df": 2, "max_vocab": 2000}
     (DATA / "vocab.json").write_text(json.dumps(vocab, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
-    # --- modelo pré-treinado: Adam, H=32, lr=0,01, semente 0 (o modelo final dos resultados) ---
-    Xtr, Xva, Xte = V.transformar(tr_t), V.transformar(va_t), V.transformar(te_t)
+    # --- modelo pré-treinado: Adam, H=32, lr=0,001, semente 0, treino bilíngue (o modelo final dos resultados) ---
+    Xtr, Xva = V.transformar(tr_t), V.transformar(va_t)
     m, curva, ep = I.treinar_mlp(Xtr, tr_y, Xva, va_y, H=H, otim="Adam", lr=LR, epocas=EPOCAS, batch=BATCH, semente=SEMENTE)
-    mt = I.metricas(te_y, I.prever(m, Xte))
-    assert (mt["tp"], mt["fp"], mt["fn"], mt["tn"]) == (50, 1, 10, 55), mt  # igual à matriz de confusão dos resultados
+    mt = I.metricas(te_y, I.prever(m, V.transformar(te_t)))
+    mp = I.metricas(tp_y, I.prever(m, V.transformar(tp_t)))
+    # igual às matrizes de confusão da semente 0 dos resultados (info.json)
+    assert [mt[k] for k in ("tp", "fp", "fn", "tn")] == [49, 1, 11, 55], mt
+    assert [mp[k] for k in ("tp", "fp", "fn", "tn")] == [55, 0, 5, 56], mp
     W1 = m[0].weight.detach().numpy().T      # (V, H)
     b1 = m[0].bias.detach().numpy()
     W2 = m[2].weight.detach().numpy().ravel()  # (H,)
     b2 = m[2].bias.detach().numpy()
-    modelo = {"V": n, "H": H, "otimizador": "Adam", "lr": LR, "semente": SEMENTE, "epocas": EPOCAS, "batch": BATCH, "melhor_epoca": int(ep),
+    modelo = {"V": n, "H": H, "otimizador": "Adam", "lr": LR, "semente": SEMENTE, "epocas": EPOCAS, "batch": BATCH, "melhor_epoca": int(ep), "treino": "bilíngue (EN/DE + PT)",
               "n_parametros": I.n_parametros(n, H), "precisao": "float32 arredondado a 6 algarismos significativos",
               "W1": arred(W1), "b1": arred(b1), "W2": arred(W2), "b2": arred(b2),
-              "teste_python": {k: mt[k] for k in ("f1", "auc", "tp", "fp", "fn", "tn")}}
+              "teste_python": {"en": {k: mt[k] for k in ("f1", "auc", "tp", "fp", "fn", "tn")}, "pt": {k: mp[k] for k in ("f1", "auc", "tp", "fp", "fn", "tn")}}}
     (DATA / "modelo.json").write_text(json.dumps(modelo, separators=(",", ":")), encoding="utf-8")
-    print("modelo: melhor época", ep, "| teste", {k: round(v, 4) if isinstance(v, float) else v for k, v in mt.items()})
+    print("modelo: melhor época", ep, "| EN/DE", {k: round(v, 4) if isinstance(v, float) else v for k, v in mt.items()}, "| PT", {k: round(v, 4) if isinstance(v, float) else v for k, v in mp.items()})
 
     # --- resultados.json (a partir dos CSV do trabalho; nenhum número é calculado aqui além de médias das curvas) ---
     info = json.loads((RES / "info.json").read_text())
@@ -131,8 +146,9 @@ def main():
         "curvas_medias": medias,
         "convergencia": [{k: (v if k == "otimizador" else num(v)) for k, v in r.items()} for r in ler_csv("tab_convergencia.csv")],
         "grade_lr": [{"otimizador": r["otimizador"], "lr": num(r["lr"]), "val_loss": num(r["val_loss"]), "melhor_epoca": num(r["melhor_epoca"])} for r in ler_csv("tab_grade_lr.csv")],
-        "capacidade": [{k: num(r[k]) for k in ("H", "parametros", "treino_loss", "val_loss", "val_loss_dp", "f1_teste", "f1_teste_dp", "auc_teste", "f1_nc", "f1_xt", "melhor_epoca")} for r in ler_csv("tab_capacidade.csv")],
-        "representacao": [{"representacao": r["representacao"], **{k: num(r[k]) for k in ("val_loss", "f1_teste", "f1_teste_dp", "auc_teste", "f1_nc", "f1_xt")}} for r in ler_csv("tab_representacao.csv")],
+        "capacidade": [{k: num(r[k]) for k in ("H", "parametros", "treino_loss", "val_loss", "val_loss_dp", "f1_en", "f1_pt", "f1_bil", "f1_bil_dp", "auc_bil", "f1_nc", "f1_xt", "f1_br", "melhor_epoca")} for r in ler_csv("tab_capacidade.csv")],
+        "representacao": [{"representacao": r["representacao"], **{k: num(r[k]) for k in ("val_loss", "f1_en", "f1_pt", "f1_bil", "f1_bil_dp", "auc_bil", "f1_nc", "f1_xt", "f1_br")}} for r in ler_csv("tab_representacao.csv")],
+        "idiomas": [{"treino": r["treino"], "conjunto": r["conjunto"], "vocab": int(r["vocab"]), **{k: num(r[k]) for k in ("f1", "f1_dp", "auc", "prec", "rec")}} for r in ler_csv("tab_idiomas.csv")],
         "final": final,
         "final_semente0": final_s0,
         "trabalho1": [{"detector": r["detector"], "conjunto": r["conjunto"], "f1": num(r["f1"]), "f1_dp": num(r["f1_dp"]), "auc": num(r["auc"]), "n_sementes": int(r["n_sementes"])} for r in ler_csv("ref_trabalho1.csv")],

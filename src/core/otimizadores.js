@@ -1,6 +1,7 @@
 // Os quatro otimizadores da Aula 4, com a mesma semântica do PyTorch (torch.optim). Atualizam os vetores in-place.
 export const NOMES = ['SGD', 'SGD+Momentum', 'RMSProp', 'Adam'];
-export const LR_TRABALHO = { 'SGD': 1.0, 'SGD+Momentum': 0.1, 'RMSProp': 0.01, 'Adam': 0.01 }; // melhores taxas pela validação (tab_grade_lr)
+export const LR_TRABALHO = { 'SGD': 1.0, 'SGD+Momentum': 0.1, 'RMSProp': 0.01, 'Adam': 0.001 }; // melhores taxas pela perda de validação (tab_grade_lr, treino bilíngue)
+export const LR_ADAM_RAPIDO = 0.01; // Adam com lr 0,01: perda de validação equivalente em ~4 épocas (opção do #otimizadores)
 
 const campos = ['W1', 'b1', 'W2', 'b2'];
 

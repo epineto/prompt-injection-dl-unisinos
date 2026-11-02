@@ -210,3 +210,9 @@ fieldset { border: 0; margin: 0; padding: 0; }
 @media (max-width: 900px) { .hero-in { grid-template-columns: minmax(0, 1fr); } }
 
 .metr, .exemplo-pipe { text-align: left; hyphens: manual; }
+
+/* versão bilíngue: opção Adam lr 0,01, mapa de calor língua × teste */
+.chip-check { display: inline-flex; align-items: center; gap: .4rem; border: 1px solid #98A1C2; border-radius: 999px; padding: .3rem .75rem; background: #fff; color: var(--azul); cursor: pointer; font-size: .9rem; }
+.chip-check input { width: auto; margin: 0; accent-color: var(--azul); }
+.chip-check:has(input:checked) { background: var(--claro); border-color: var(--azul); font-weight: 700; }
+.tab td.heat { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }

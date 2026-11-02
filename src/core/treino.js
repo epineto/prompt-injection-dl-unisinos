@@ -3,6 +3,7 @@ import { mulberry32, permutacao } from './rng.js';
 import { inicializar, copiar, gradientes, novosGradientes, perdaMedia, prever, nParametros } from './mlp.js';
 import { criarOtimizador } from './otimizadores.js';
 import { metricas } from './metricas.js';
+import { conjuntosDeAvaliacao } from './dados.js';
 
 // cfg: {otimizador, lr, H, batch, epocas, semente}; dados: {Xtr, ytr, Xva, yva, ...}
 // hooks: {aoFimEpoca(info) -> Promise|void (pode ser assíncrono para ceder o laço), parar() -> bool}
@@ -32,11 +33,9 @@ export async function treinar(cfg, dados, hooks = {}) {
   return { melhor: melhorP, ultima: P, melhorEp, curva, epocasFeitas: curva.val.length, ms: performance.now() - t0, parametros: nParametros(dados.V, H) };
 }
 
-// Métricas de um modelo nos conjuntos de avaliação do laboratório.
+// Métricas de um modelo nos conjuntos de avaliação do laboratório (en, pt, bil, neuralchemy, xtram1, br).
 export function avaliarConjuntos(P, dados, limiar = 0.5) {
   const r = {};
-  for (const [k, X, y] of [['deepset', dados.Xte, dados.yte], ['neuralchemy', dados.Xnc, dados.ync], ['xtram1', dados.Xxt, dados.yxt]]) {
-    r[k] = metricas(y, prever(P, X), limiar);
-  }
+  for (const [k, X, y] of conjuntosDeAvaliacao(dados)) r[k] = metricas(y, prever(P, X), limiar);
   return r;
 }

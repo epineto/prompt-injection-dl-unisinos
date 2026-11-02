@@ -24,3 +24,23 @@ test('o HTML tem as âncoras de seção exigidas', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   for (const id of ['intro', 'testar', 'treinar', 'otimizadores', 'backprop', 'resultados', 'sobre']) assert.match(html, new RegExp(`id="${id}"`));
 });
+
+test('toda chave t(\'…\') usada na interface existe nos dicionários (PT e EN)', async () => {
+  const { readdirSync } = await import('node:fs');
+  const dir = new URL('../src/ui/', import.meta.url);
+  const usadas = new Set();
+  for (const f of readdirSync(dir)) {
+    const src = readFileSync(new URL(f, dir), 'utf8');
+    for (const m of src.matchAll(/\bt\('([a-z0-9_.]+)'/g)) usadas.add(m[1]);
+    for (const m of src.matchAll(/'((?:testar|treinar|otim|res|sobre|map|bp|intro|erro)\.[a-z0-9_.]+)'/g)) usadas.add(m[1]);
+  }
+  const falta = [...usadas].filter((k) => !(k in pt) || !(k in en)).filter((k) => !['sobre.a', 'sobre.lim', 'sobre.lic_', 'map.', 'testar.ex.'].includes(k));
+  assert.deepEqual(falta, []);
+});
+
+test('nenhum número do trabalho monolíngue sobrevive nos textos da interface', () => {
+  const proibidos = [/0,873/, /0\.873/, /31\.521/, /31,521/, /\b983 (termos|terms|pesos|weights|números|numbers)/, /436 amostras/, /436 training samples/, /DistilBERT[^.]{0,40}340/, /340 ?×/];
+  for (const [nome, d] of [['pt', pt], ['en', en]]) for (const [k, v] of Object.entries(d)) for (const re of proibidos) assert.ok(!re.test(v), `${nome}:${k} contém ${re}`);
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  for (const re of proibidos) assert.ok(!re.test(html), `index.html contém ${re}`);
+});
