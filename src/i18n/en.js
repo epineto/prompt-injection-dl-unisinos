@@ -129,6 +129,7 @@ export default {
   'res.t': 'Assignment results',
   'res.lead': 'Tables and charts from the report, read from data/resultados.json (exported from the CSVs produced by the Python code). Means of 5 seeds (0 to 4), with standard deviation where shown. Training is bilingual (EN/DE + PT, automatic translation); the test sets were used only at the end and every choice used validation.',
   'res.dados': 'Data',
+  'res.d_treino': 'Bilingual training (EN/DE + PT)', 'res.d_val': 'Bilingual validation (EN/DE + PT)',
   'res.d_conj': 'Set', 'res.d_inj': 'Injections', 'res.d_pct': '% injection',
   'res.dados_d': 'Training and validation come from the deepset training split (stratified 80/20 by index, applied to the original and to the translation: a text and its translation stay on the same side, with no leakage): 436 + 436 = 872 and 110 + 110 = 220. The deepset tests are in-distribution (EN/DE and the PT translation, 116 texts each). Out of distribution: neuralchemy, xTRam1 (1,000-text sample, synthetic) and BR-synthetic (native Portuguese, synthetic, 1,000 long context-plus-instruction texts).',
   'res.otim': 'Optimizers', 'res.otim_aria': 'Mean validation loss per epoch of the four optimizers',

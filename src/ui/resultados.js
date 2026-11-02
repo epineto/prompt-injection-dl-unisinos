@@ -22,13 +22,20 @@ export function iniciarResultados(S) {
     return grupos.map((g) => `<div class="bgrupo"><h4>${esc(g.rotulo)}</h4>${g.barras.map((b) => `<div class="b-lin"><span class="b-n">${esc(b.nome)}</span><span class="b-trilho"><i style="width:${Math.max(b.v, 0) * 100}%;background:${b.cor}"></i></span><span class="b-v">${fmt(b.v, 3)}</span></div>`).join('')}</div>`).join('');
   }
 
+  const nomeDados = (n) => { // nomes do CSV (PT) -> idioma da interface
+    if (n.startsWith('treino')) return t('res.d_treino');
+    if (n.startsWith('valida')) return t('res.d_val');
+    const k = Object.keys(NOME_PY).find((c) => NOME_PY[c] === n);
+    return k ? t(CHAVE_CONJ[k]) : n;
+  };
+
   function render() {
     const C = (k) => r.otimizadores[k], F = NOME_PY;
     const idi = (tr, c) => r.idiomas.find((x) => x.treino === tr && x.conjunto === F[c]);
     const grade = (n, lr) => r.grade_lr.find((x) => x.otimizador === n && x.lr === lr);
     let h = '';
     // dados
-    h += `<div class="cartao"><h3>${t('res.dados')}</h3>${tab([t('res.d_conj'), 'n', t('res.d_inj'), t('res.d_pct')], r.dados.map((d) => [esc(d.conjunto), d.n, d.injecao, fmt(d.pct, 1) + '%']))}<p class="mini just">${t('res.dados_d')}</p></div>`;
+    h += `<div class="cartao"><h3>${t('res.dados')}</h3>${tab([t('res.d_conj'), 'n', t('res.d_inj'), t('res.d_pct')], r.dados.map((d) => [esc(nomeDados(d.conjunto)), d.n, d.injecao, fmt(d.pct, 1) + '%']))}<p class="mini just">${t('res.dados_d')}</p></div>`;
     // línguas (H4)
     const cols = ['en', 'pt', 'bil', 'br'], cabI = [t('res.i_treino'), t('res.i_vocab'), t('res.i_en'), t('res.i_pt'), t('res.i_bil'), t('res.i_br')];
     const linhasI = ['orig', 'pt', 'bilingue'].map((tr) => [t(CHAVE_TREINO[Object.keys(TREINO_PY).find((k) => TREINO_PY[k] === tr)]), Number(idi(tr, 'en').vocab).toLocaleString(t('lang.loc')), ...cols.map((c) => idi(tr, c))]);

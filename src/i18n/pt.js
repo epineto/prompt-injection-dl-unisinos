@@ -129,6 +129,7 @@ export default {
   'res.t': 'Resultados do trabalho',
   'res.lead': 'Tabelas e gráficos do relatório, lidos de data/resultados.json (exportado dos CSV gerados pelo código Python). Valores médios de 5 sementes (0 a 4), com desvio-padrão quando indicado. O treino é bilíngue (EN/DE + PT, tradução automática); o teste só foi usado ao final e todas as escolhas usaram a validação.',
   'res.dados': 'Dados',
+  'res.d_treino': 'Treino bilíngue (EN/DE + PT)', 'res.d_val': 'Validação bilíngue (EN/DE + PT)',
   'res.d_conj': 'Conjunto', 'res.d_inj': 'Injeções', 'res.d_pct': '% injeção',
   'res.dados_d': 'Treino e validação vêm do treino do deepset (divisão estratificada 80/20 por índices, aplicada ao original e à tradução: um texto e a sua tradução ficam do mesmo lado, sem vazamento): 436 + 436 = 872 e 110 + 110 = 220. Os testes do deepset são em-distribuição (EN/DE e a tradução PT, 116 textos cada). Fora da distribuição: neuralchemy, xTRam1 (amostra de 1.000, sintético) e BR-synthetic (português nativo, sintético, 1.000 textos longos de contexto mais instrução).',
   'res.otim': 'Otimizadores', 'res.otim_aria': 'Perda de validação média por época dos quatro otimizadores',
