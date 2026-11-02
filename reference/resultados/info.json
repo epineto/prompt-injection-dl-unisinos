@@ -1,0 +1,34 @@
+{
+ "python": "3.12.3",
+ "torch": "2.14.1+cpu",
+ "sklearn": "1.9.1",
+ "numpy": "2.5.3",
+ "epocas": 40,
+ "batch": 32,
+ "sementes": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "dif_tfidf_sklearn": 1.1102230246251565e-16,
+ "gradcheck_max_abs_err": 1.1102230246251565e-16,
+ "matriz_confusao_s0": {
+  "tp": 50,
+  "fp": 1,
+  "fn": 10,
+  "tn": 55
+ },
+ "latencia_mlp_ms_por_texto": 0.15297101624310017,
+ "parametros_mlp": 31521,
+ "H_final": 32,
+ "lr_melhor": {
+  "Adam": 0.01,
+  "RMSProp": 0.01,
+  "SGD": 1.0,
+  "SGD+Momentum": 0.1
+ },
+ "vocab": 983,
+ "C_logreg": 100
+}

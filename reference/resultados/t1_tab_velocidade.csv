@@ -1,0 +1,3 @@
+modelo,parâmetros obtidos (M),parâmetros paper (M),sem embeddings (M),tamanho fp32 (MB),tempo bs=1 obtido (s),dp (s),tempo paper (s),tempo bs=32 (s)
+BERT-base,109.483009,110,85.645825,437.932036,169.60015191556886,5.724956816970699,668,43.72559795000901
+DistilBERT,66.954241,66,43.118593,267.816964,80.65041990826528,0.4949475263607859,410,24.27886410150677

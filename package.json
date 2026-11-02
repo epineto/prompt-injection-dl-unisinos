@@ -1,0 +1,16 @@
+{
+  "name": "prompt-injection-dl-unisinos",
+  "version": "1.0.0",
+  "description": "Laboratório de Deep Learning: detectando prompt injection com um MLP (TF-IDF, backpropagation, otimizadores) no navegador / Deep Learning Lab: detecting prompt injection with an MLP in the browser",
+  "type": "module",
+  "license": "MIT",
+  "author": "Epitácio Vicente do Nascimento Neto",
+  "repository": { "type": "git", "url": "git+https://github.com/epineto/prompt-injection-dl-unisinos.git" },
+  "homepage": "https://epineto.github.io/prompt-injection-dl-unisinos/",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/",
+    "serve": "python3 -m http.server 8000"
+  },
+  "engines": { "node": ">=18" }
+}

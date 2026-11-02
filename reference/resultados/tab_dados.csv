@@ -1,0 +1,6 @@
+conjunto,n,injecao,pct_injecao
+treino,436,162,37.2
+validação,110,41,37.3
+deepset (teste),116,60,51.7
+neuralchemy (OOD),942,552,58.6
+xTRam1 (OOD),1000,316,31.6

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratório de Deep Learning: prompt injection com um MLP</title>
+<meta name="description" content="Laboratório interativo de Deep Learning: detecte prompt injection com um MLP sobre TF-IDF, treine do zero no navegador, compare SGD, Momentum, RMSProp e Adam e veja o backpropagation passo a passo. Trabalho da Unisinos.">
+<meta name="theme-color" content="#1D2369">
+<meta name="author" content="Epitácio Vicente do Nascimento Neto">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Laboratório de Deep Learning · Unisinos">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:title" content="Laboratório de Deep Learning: detectando prompt injection com um MLP">
+<meta property="og:description" content="Texto → tokens → TF-IDF → MLP → probabilidade. Teste, treine do zero, compare otimizadores e veja o backpropagation, direto no navegador.">
+<meta property="og:url" content="https://epineto.github.io/prompt-injection-dl-unisinos/">
+<meta property="og:image" content="https://epineto.github.io/prompt-injection-dl-unisinos/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pipeline texto, tokens, TF-IDF, MLP e probabilidade de injeção">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="style.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+<a class="pular" href="#conteudo" data-i18n="pular">Pular para o conteúdo</a>
+
+<header class="cab">
+  <div class="cab-in">
+    <img class="logo" src="assets/logo_unisinos.png" alt="Unisinos" data-i18n-attr="alt:cab.logo" width="118" height="30">
+    <div class="titulos">
+      <p class="cab-t" data-i18n="cab.titulo">Laboratório de Deep Learning</p>
+      <p class="cab-s" data-i18n="cab.sub">Detectando prompt injection com um MLP · Trabalho 02 · PPGCA/Unisinos</p>
+    </div>
+    <div class="idioma" role="group" aria-label="Idioma" data-i18n-attr="aria-label:lang.grupo">
+      <button type="button" data-lang-btn="pt" lang="pt-BR" aria-pressed="true" title="Português (Brasil)">PT</button>
+      <button type="button" data-lang-btn="en" lang="en" aria-pressed="false" title="English">EN</button>
+    </div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="Seções" data-i18n-attr="aria-label:nav.aria">
+  <ul class="nav-in">
+    <li><a href="#intro" data-i18n="nav.intro">Início</a></li>
+    <li><a href="#testar" data-i18n="nav.testar">Testar</a></li>
+    <li><a href="#treinar" data-i18n="nav.treinar">Treinar</a></li>
+    <li><a href="#otimizadores" data-i18n="nav.otim">Otimizadores</a></li>
+    <li><a href="#backprop" data-i18n="nav.backprop">Backprop</a></li>
+    <li><a href="#resultados" data-i18n="nav.resultados">Resultados</a></li>
+    <li><a href="#sobre" data-i18n="nav.sobre">Sobre</a></li>
+  </ul>
+</nav>
+
+<main id="conteudo" tabindex="-1">
+<noscript><p class="aviso">Este laboratório precisa de JavaScript e de um servidor HTTP (ver README).</p></noscript>
+<p id="erro-carga" class="aviso" role="alert" hidden></p>
+
+<!-- ============================ INTRO ============================ -->
+<section id="intro" class="sec" aria-labelledby="intro-t">
+  <div class="hero"><div class="hero-in"><div>
+    <img class="hero-logo" src="assets/logo_unisinos.png" alt="Unisinos" data-i18n-attr="alt:cab.logo" width="200" height="51">
+    <h2 id="intro-t" data-i18n="intro.titulo">Laboratório de Deep Learning: detectando prompt injection com um MLP</h2>
+    <ul class="problema">
+      <li data-i18n-html="intro.p1"></li>
+      <li data-i18n-html="intro.p2"></li>
+      <li data-i18n-html="intro.p3"></li>
+    </ul>
+  </div><div class="hero-nums" id="hero-nums"></div></div></div>
+
+  <div class="cartao">
+    <h3 data-i18n="intro.pipe.t">O caminho de um texto até a decisão</h3>
+    <p class="exemplo-pipe"><span data-i18n="intro.pipe.ex">Exemplo ao vivo, com o modelo pré-treinado:</span> <q id="pipe-texto"></q></p>
+    <ol class="pipe">
+      <li><span class="pipe-n">1</span><strong data-i18n="intro.pipe.a">Texto</strong><span class="pipe-d" data-i18n="intro.pipe.a_d">o que a pessoa digitou</span><code id="pipe-a" class="pipe-ex"></code></li>
+      <li class="pipe-seta" aria-hidden="true">→</li>
+      <li><span class="pipe-n">2</span><strong data-i18n="intro.pipe.b">Tokens</strong><span class="pipe-d" data-i18n="intro.pipe.b_d">palavras em minúsculas (Aula 6)</span><code id="pipe-b" class="pipe-ex"></code></li>
+      <li class="pipe-seta" aria-hidden="true">→</li>
+      <li><span class="pipe-n">3</span><strong data-i18n="intro.pipe.c">TF-IDF</strong><span class="pipe-d" data-i18n="intro.pipe.c_d">vetor de 983 números (Aula 6)</span><code id="pipe-c" class="pipe-ex"></code></li>
+      <li class="pipe-seta" aria-hidden="true">→</li>
+      <li><span class="pipe-n">4</span><strong data-i18n="intro.pipe.d">MLP</strong><span class="pipe-d" data-i18n="intro.pipe.d_d">983 → 32 → 1 (Aulas 1 a 4)</span><code id="pipe-d" class="pipe-ex"></code></li>
+      <li class="pipe-seta" aria-hidden="true">→</li>
+      <li><span class="pipe-n">5</span><strong data-i18n="intro.pipe.e">Probabilidade</strong><span class="pipe-d" data-i18n="intro.pipe.e_d">chance de ser injeção</span><code id="pipe-e" class="pipe-ex pipe-forte"></code></li>
+    </ol>
+  </div>
+
+  <div class="grade3">
+    <a class="atalho" href="#testar"><strong data-i18n="intro.b1.t">Testar um texto</strong><span data-i18n="intro.b1.d">Digite ou escolha um exemplo e veja a probabilidade e as palavras que pesam.</span></a>
+    <a class="atalho" href="#treinar"><strong data-i18n="intro.b2.t">Treinar do zero</strong><span data-i18n="intro.b2.d">Ajuste otimizador, taxa e neurônios e veja a rede aprender em segundos.</span></a>
+    <a class="atalho" href="#otimizadores"><strong data-i18n="intro.b3.t">Comparar otimizadores</strong><span data-i18n="intro.b3.d">SGD, Momentum, RMSProp e Adam lado a lado, com a mesma semente.</span></a>
+    <a class="atalho" href="#backprop"><strong data-i18n="intro.b4.t">Ver o backpropagation</strong><span data-i18n="intro.b4.d">Uma rede 2-2-1 aprendendo o XOR, com todos os números visíveis.</span></a>
+    <a class="atalho" href="#resultados"><strong data-i18n="intro.b5.t">Resultados do trabalho</strong><span data-i18n="intro.b5.d">Tabelas e gráficos do relatório, com custo e generalização.</span></a>
+    <a class="atalho" href="#sobre"><strong data-i18n="intro.b6.t">Sobre o laboratório</strong><span data-i18n="intro.b6.d">Como rodar, testar, estrutura, aulas relacionadas e limitações.</span></a>
+  </div>
+</section>
+
+<!-- ============================ TESTAR ============================ -->
+<section id="testar" class="sec" aria-labelledby="testar-t">
+  <h2 id="testar-t" data-i18n="testar.t">Testar um texto</h2>
+  <p class="lead just" data-i18n="testar.lead">O modelo abaixo já vem treinado (Adam, 32 neurônios, taxa 0,01, semente 0: o modelo final do trabalho). Digite um texto e veja, em tempo real, a probabilidade de ser uma injeção.</p>
+
+  <div class="grade2">
+    <div class="cartao">
+      <h3 data-i18n="testar.entrada">Texto</h3>
+      <label class="so-leitor" for="t-texto" data-i18n="testar.entrada">Texto</label>
+      <textarea id="t-texto" rows="5" spellcheck="false" maxlength="4000"></textarea>
+      <p class="mini" data-i18n="testar.exemplos">Exemplos prontos:</p>
+      <div class="exemplos" id="t-exemplos" role="group" aria-label="Exemplos" data-i18n-attr="aria-label:testar.exemplos"></div>
+      <div class="campo">
+        <label for="t-limiar"><span data-i18n="testar.limiar">Limiar de decisão</span>: <output id="t-limiar-v">0,50</output></label>
+        <input type="range" id="t-limiar" min="0.05" max="0.95" step="0.01" value="0.5">
+        <p class="mini just" data-i18n="testar.limiar_d">Acima do limiar, o texto é classificado como injeção. Subir o limiar deixa o filtro mais permissivo; descer, mais rigoroso (Aula 2: perda não é métrica; o limiar é uma escolha de custo).</p>
+      </div>
+    </div>
+
+    <div class="cartao centro">
+      <h3 data-i18n="testar.saida">Probabilidade de injeção</h3>
+      <div id="t-gauge" class="gauge" role="img" aria-label="Medidor"></div>
+      <p id="t-prob" class="prob-grande" aria-live="polite">–</p>
+      <p id="t-veredito" class="veredito" aria-live="polite">–</p>
+      <p class="mini just" data-i18n="testar.saida_d">O medidor vai de 0 (seguro) a 1 (injeção); a marca preta é o limiar.</p>
+    </div>
+  </div>
+
+  <div class="grade2">
+    <div class="cartao">
+      <h3 data-i18n="testar.destaque">Quanto cada palavra pesa</h3>
+      <div id="t-destaque" class="destaque" aria-live="polite"></div>
+      <div class="legenda-cor" aria-hidden="true"><span class="lc lc-inj"></span><span data-i18n="testar.lg_inj">empurra para injeção</span><span class="lc lc-seg"></span><span data-i18n="testar.lg_seg">empurra para seguro</span><span class="lc lc-oov"></span><span data-i18n="testar.lg_oov">fora do vocabulário</span></div>
+      <p class="mini just" data-i18n-html="testar.destaque_d"><strong>O que olhar:</strong> cada termo conhecido é colorido pela queda da probabilidade ao removê-lo do texto (oclusão). Termos fora do vocabulário (sublinhado pontilhado) são ignorados pelo modelo.</p>
+    </div>
+    <div class="cartao">
+      <h3 data-i18n="testar.ve">O que o modelo vê</h3>
+      <p id="t-resumo-vocab" class="mini"></p>
+      <ul id="t-ve" class="lista-ve"></ul>
+      <p id="t-oov" class="aviso-oov" hidden></p>
+      <p class="mini just" data-i18n-html="testar.ve_d"><strong>O que olhar:</strong> só os termos com TF-IDF diferente de zero entram na rede (Aula 6). Quanto maior a barra, mais raro e mais repetido o termo; o vetor inteiro é normalizado (L2).</p>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <h3 data-i18n="testar.metricas">Como o modelo se sai nos conjuntos de teste</h3>
+    <p class="mini just" data-i18n-html="testar.metricas_d"><strong>O que olhar:</strong> as matrizes mudam com o limiar acima. Em-distribuição (deepset) o filtro vai bem; fora dela (neuralchemy, xTRam1) a qualidade cai muito, porque o vocabulário é outro (Aula 1: desconfiar de métrica perfeita; Aula 5: com classes desbalanceadas, usar F1).</p>
+    <div id="t-conj" class="grade3"></div>
+  </div>
+</section>
+
+<!-- ============================ TREINAR ============================ -->
+<section id="treinar" class="sec" aria-labelledby="treinar-t">
+  <h2 id="treinar-t" data-i18n="treinar.t">Treinar do zero</h2>
+  <p class="lead just" data-i18n="treinar.lead">Uma rede nova é treinada aqui, ao vivo, com as 436 amostras de treino (Web Worker, sem servidor). Os valores iniciais são os do trabalho; mude um de cada vez e veja o efeito.</p>
+  <div class="grade-treino">
+    <form class="cartao" id="tr-form" autocomplete="off">
+      <h3 data-i18n="treinar.cfg">Configuração</h3>
+      <div class="campo"><label for="tr-otim" data-i18n="treinar.otim">Otimizador</label>
+        <select id="tr-otim"><option value="SGD">SGD</option><option value="SGD+Momentum">SGD + Momentum</option><option value="RMSProp">RMSProp</option><option value="Adam" selected>Adam</option></select></div>
+      <div class="campo"><label for="tr-lr" data-i18n="treinar.lr">Taxa de aprendizado</label>
+        <input id="tr-lr" type="text" inputmode="decimal" value="0,01"></div>
+      <div class="campo"><label for="tr-h" data-i18n="treinar.h">Neurônios ocultos (H)</label>
+        <input id="tr-h" type="number" min="1" max="512" step="1" value="32"></div>
+      <div class="campo"><label for="tr-batch" data-i18n="treinar.batch">Tamanho do lote</label>
+        <input id="tr-batch" type="number" min="1" max="436" step="1" value="32"></div>
+      <div class="campo"><label for="tr-ep" data-i18n="treinar.ep">Épocas</label>
+        <input id="tr-ep" type="number" min="1" max="200" step="1" value="40"></div>
+      <div class="campo"><label for="tr-seed" data-i18n="treinar.seed">Semente</label>
+        <input id="tr-seed" type="number" min="0" max="9999" step="1" value="0"></div>
+      <p class="params" aria-live="polite"><strong data-i18n="treinar.params">Parâmetros</strong>: <span id="tr-params"></span></p>
+      <p class="mini just" data-i18n="treinar.params_d">Cada neurônio oculto tem 983 pesos e um viés; a saída tem H pesos e um viés. É a mesma conta dos 641 parâmetros da Aula 4.</p>
+      <div class="botoes">
+        <button type="submit" class="btn primario" id="tr-go" data-i18n="treinar.go">Treinar</button>
+        <button type="button" class="btn" id="tr-stop" disabled data-i18n="treinar.stop">Parar</button>
+        <button type="button" class="btn sec-btn" id="tr-reset" data-i18n="treinar.reset">Valores do trabalho</button>
+      </div>
+      <p id="tr-aviso" class="aviso" role="alert" hidden></p>
+    </form>
+
+    <div class="cartao">
+      <h3 data-i18n="treinar.curvas">Curvas ao vivo</h3>
+      <div class="progresso"><div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="tr-barra" aria-label="Progresso" data-i18n-attr="aria-label:treinar.prog"><span id="tr-barra-i"></span></div><p id="tr-status" class="mini" aria-live="polite" data-i18n="treinar.pronto">Pronto para treinar.</p></div>
+      <div class="graficos2">
+        <figure><figcaption data-i18n="treinar.g_perda">Perda (entropia cruzada) por época</figcaption><canvas id="tr-g-perda" role="img" aria-label="Perda por época"></canvas></figure>
+        <figure><figcaption data-i18n="treinar.g_f1">F1 de validação por época</figcaption><canvas id="tr-g-f1" role="img" aria-label="F1 de validação"></canvas></figure>
+      </div>
+      <p class="mini just" data-i18n-html="treinar.curvas_d"><strong>O que olhar:</strong> a perda de treino só desce, mas a de validação sobe quando a rede passa a decorar o treino (sobreajuste). A parada antecipada restaura os pesos da <em>melhor época de validação</em> (ponto verde), como no Python.</p>
+    </div>
+  </div>
+  <div class="cartao" id="tr-res" hidden>
+    <h3 data-i18n="treinar.res">Resultado do treino</h3>
+    <p id="tr-res-txt" class="just"></p>
+    <div id="tr-res-tab" class="rolagem"></div>
+    <p class="mini just" data-i18n-html="treinar.res_d"><strong>O que olhar:</strong> compare a coluna F1 em deepset (em-distribuição) com a dos conjuntos fora da distribuição. O treino aqui usa a mesma divisão do trabalho, mas o embaralhamento e a inicialização do JavaScript diferem dos do PyTorch: os números ficam próximos, não idênticos.</p>
+  </div>
+</section>
+
+<!-- ============================ OTIMIZADORES ============================ -->
+<section id="otimizadores" class="sec" aria-labelledby="otim-t">
+  <h2 id="otim-t" data-i18n="otim.t">Comparar otimizadores</h2>
+  <p class="lead just" data-i18n="otim.lead">Os quatro otimizadores da Aula 4 treinam a mesma rede, com os mesmos dados e a mesma semente. Cada um usa a taxa ótima encontrada pela validação no trabalho.</p>
+  <form class="cartao" id="ot-form" autocomplete="off">
+    <div class="linha-ctrl">
+      <fieldset class="campo-radio"><legend data-i18n="otim.mult">Multiplicar a taxa por</legend>
+        <label><input type="radio" name="ot-mult" value="0.1"> ×0,1</label>
+        <label><input type="radio" name="ot-mult" value="1" checked> ×1</label>
+        <label><input type="radio" name="ot-mult" value="10"> ×10</label>
+      </fieldset>
+      <div class="campo"><label for="ot-seed" data-i18n="treinar.seed">Semente</label><input id="ot-seed" type="number" min="0" max="9999" value="0"></div>
+      <div class="campo"><label for="ot-ep" data-i18n="treinar.ep">Épocas</label><input id="ot-ep" type="number" min="1" max="200" value="40"></div>
+      <div class="botoes"><button type="submit" class="btn primario" id="ot-go" data-i18n="otim.go">Comparar</button><button type="button" class="btn" id="ot-stop" disabled data-i18n="treinar.stop">Parar</button></div>
+    </div>
+    <p class="mini just" data-i18n-html="otim.mult_d"><strong>O que olhar:</strong> com ×10 a taxa fica grande demais (oscilações e divergência); com ×0,1, pequena demais (lentidão). Cada otimizador tem a sua faixa boa (Aula 4).</p>
+    <ul id="ot-status" class="status-otim"></ul>
+    <p id="ot-aviso" class="aviso" role="alert" hidden></p>
+  </form>
+  <div class="grade2">
+    <div class="cartao"><h3 data-i18n="otim.g_treino">Perda de treino</h3><canvas id="ot-g-treino" role="img" aria-label="Perda de treino"></canvas></div>
+    <div class="cartao"><h3 data-i18n="otim.g_val">Perda de validação</h3><canvas id="ot-g-val" role="img" aria-label="Perda de validação"></canvas></div>
+  </div>
+  <div class="legenda" id="ot-legenda"></div>
+  <div class="cartao">
+    <h3 data-i18n="otim.tab">Resultado desta comparação</h3>
+    <div id="ot-tab" class="rolagem"></div>
+    <div class="msg-chave" id="ot-msg"></div>
+  </div>
+  <div class="cartao">
+    <h3 data-i18n="otim.ref">Referência do trabalho (Python, 5 sementes)</h3>
+    <div id="ot-ref" class="rolagem"></div>
+    <p class="mini just" data-i18n="otim.ref_d">Médias de 5 sementes no PyTorch, com as taxas ótimas; "melhor época" é a de menor perda de validação. Os adaptativos chegam ao mínimo em poucas épocas, mas o menor valor da perda de validação foi do SGD (a hipótese "adaptativos têm menor perda" foi refutada; a de "mais rápidos" foi confirmada).</p>
+  </div>
+</section>
+
+<!-- ============================ BACKPROP ============================ -->
+<section id="backprop" class="sec" aria-labelledby="bp-t">
+  <h2 id="bp-t" data-i18n="bp.t">Backpropagation passo a passo</h2>
+  <p class="lead just" data-i18n="bp.lead">Uma rede mínima 2-2-1 (duas entradas, dois neurônios ocultos, uma saída, sigmoide) aprende o XOR, que um único neurônio não resolve (Aulas 2 e 3). Todos os números do ciclo forward → perda → gradiente → atualização ficam visíveis.</p>
+  <div class="cartao">
+    <div class="linha-ctrl">
+      <div class="campo"><label for="bp-lr" data-i18n="treinar.lr">Taxa de aprendizado</label><input id="bp-lr" type="text" inputmode="decimal" value="0,5"></div>
+      <div class="campo"><label for="bp-seed" data-i18n="treinar.seed">Semente</label><input id="bp-seed" type="number" min="1" max="99" value="1"></div>
+      <div class="campo larga"><label for="bp-modo" data-i18n="bp.modo">Atualização</label><select id="bp-modo"><option value="1" data-i18n="bp.modo1">Amostra a amostra (lote 1)</option><option value="4" data-i18n="bp.modo4">Lote de 4 (gradiente médio)</option></select></div>
+      <div class="botoes">
+        <button type="button" class="btn primario" id="bp-passo" data-i18n="bp.passo">Passo</button>
+        <button type="button" class="btn" id="bp-epoca" data-i18n="bp.epoca">Época</button>
+        <button type="button" class="btn" id="bp-treinar" aria-pressed="false" data-i18n="bp.treinar">Treinar</button>
+        <button type="button" class="btn sec-btn" id="bp-reset" data-i18n="bp.reset">Reiniciar</button>
+      </div>
+    </div>
+    <p id="bp-aviso" class="aviso" role="alert" hidden></p>
+  </div>
+  <div class="grade-bp">
+    <div class="cartao">
+      <h3 data-i18n="bp.rede">A rede</h3>
+      <div id="bp-rede" class="rede-svg"></div>
+      <div class="amostras" id="bp-amostras" role="group" aria-label="Amostra" data-i18n-attr="aria-label:bp.amostra"></div>
+      <p class="mini just" data-i18n-html="bp.rede_d"><strong>O que olhar:</strong> os números sobre as arestas são os pesos; cada passo muda um pouco todos eles na direção que reduz a perda.</p>
+    </div>
+    <div class="cartao">
+      <h3 data-i18n="bp.fronteira">Fronteira de decisão</h3>
+      <canvas id="bp-g-fronteira" role="img" aria-label="Fronteira de decisão"></canvas>
+      <h3 data-i18n="bp.perda">Perda por época</h3>
+      <canvas id="bp-g-perda" role="img" aria-label="Perda por época"></canvas>
+      <p id="bp-resumo" class="mini" aria-live="polite"></p>
+    </div>
+  </div>
+  <div class="cartao">
+    <h3 data-i18n="bp.num">Os números do último passo</h3>
+    <div id="bp-num" class="num-bp"></div>
+  </div>
+</section>
+
+<!-- ============================ RESULTADOS ============================ -->
+<section id="resultados" class="sec" aria-labelledby="res-t">
+  <h2 id="res-t" data-i18n="res.t">Resultados do trabalho</h2>
+  <p class="lead just" data-i18n="res.lead">Tabelas e gráficos do relatório, lidos de <code>data/resultados.json</code> (exportado dos CSV gerados pelo código Python). Valores médios de 5 sementes (0 a 4), com desvio-padrão quando indicado. O teste só foi usado ao final; todas as escolhas usaram a validação.</p>
+  <div id="res-corpo"></div>
+</section>
+
+<!-- ============================ SOBRE ============================ -->
+<section id="sobre" class="sec" aria-labelledby="sobre-t">
+  <h2 id="sobre-t" data-i18n="sobre.t">Sobre o laboratório</h2>
+  <div class="grade2">
+    <div class="cartao">
+      <h3 data-i18n="sobre.rodar">Como rodar</h3>
+      <p class="just" data-i18n-html="sobre.rodar_d"></p>
+      <pre><code>npm run serve   # python3 -m http.server 8000
+npm test        # node --test tests/</code></pre>
+      <h3 data-i18n="sobre.estrutura">Estrutura de pastas</h3>
+      <pre><code>index.html  style.css  404.html
+assets/      logo, ícones, imagem social
+data/        dataset, vocabulário, modelo, resultados (JSON)
+src/core/    núcleo: texto, MLP, otimizadores, treino, XOR
+src/ui/      interface; src/worker.js (treino em Web Worker)
+src/i18n/    textos PT e EN
+tests/       testes (node --test) e reference.json
+reference/   código Python do trabalho e geradores
+docs/        reprodução, navegação e capturas</code></pre>
+    </div>
+    <div class="cartao">
+      <h3 data-i18n="sobre.links">Links</h3>
+      <ul class="links" id="sobre-links"></ul>
+      <h3 data-i18n="sobre.creditos">Créditos</h3>
+      <p class="just" data-i18n-html="sobre.creditos_d"></p>
+      <h3 data-i18n="sobre.licenca">Licença e citação</h3>
+      <p class="just" data-i18n-html="sobre.licenca_d"></p>
+    </div>
+  </div>
+  <div class="cartao">
+    <h3 data-i18n="sobre.aulas">Aula → seção do laboratório</h3>
+    <div class="rolagem"><table class="tab tab-txt" id="sobre-aulas"></table></div>
+    <p class="mini just" data-i18n="sobre.aulas_d">Marcas de tempo das aulas gravadas (hh:mm:ss) conforme o índice geral das transcrições.</p>
+  </div>
+  <div class="grade2">
+    <div class="cartao"><h3 data-i18n="sobre.limites">Limitações conhecidas</h3><ul class="lista" id="sobre-limites"></ul></div>
+    <div class="cartao"><h3 data-i18n="sobre.dados">Dados e licenças</h3><ul class="lista" id="sobre-dados"></ul></div>
+  </div>
+</section>
+</main>
+
+<footer class="rodape">
+  <p data-i18n="rodape.1">Epitácio Neto · PPGCA/Unisinos · Deep Learning 2026/2 · Prof. Felipe André Zeiser</p>
+  <p data-i18n="rodape.2">Licença MIT · 100% no navegador, sem coleta de dados</p>
+</footer>
+<script type="module" src="src/ui/app.js"></script>
+</body>
+</html>
