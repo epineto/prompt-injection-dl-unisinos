@@ -23,7 +23,7 @@ DATA = RAIZ / "data"
 DATA.mkdir(exist_ok=True)
 N_AMOSTRA = 300
 N_BR = 200
-H, LR, EPOCAS, BATCH, SEMENTE = 32, 0.001, 40, 32, 0
+H, LR, EPOCAS, BATCH, SEMENTE = 8, 0.001, 40, 32, 0
 
 
 def amostra_estratificada(textos, y, n, semente=I.SEMENTE_DIVISAO):
@@ -62,20 +62,20 @@ def main():
     y0 = D["treino_total"][1]
     tr0 = [D["treino_total"][0][i] for i in itr]; trp = [D["treino_total_pt"][i] for i in itr]
     va0 = [D["treino_total"][0][i] for i in iva]; vap = [D["treino_total_pt"][i] for i in iva]
-    tr_t, tr_y = tr0 + trp, np.concatenate([y0[itr], y0[itr]])      # treino bilíngue: original (436) + tradução (436)
+    tr_t, tr_y = tr0 + trp, np.concatenate([y0[itr], y0[itr]])      # treino bilíngue: inglês (216) + tradução (216)
     va_t, va_y = va0 + vap, np.concatenate([y0[iva], y0[iva]])
     te_t, te_y = D["teste"]
     tp_t, tp_y = D["teste_pt"]
     nc_t, nc_y = amostra_estratificada(D["neuralchemy"][0], D["neuralchemy"][1], N_AMOSTRA)
     xt_t, xt_y = amostra_estratificada(D["xtram1"][0], D["xtram1"][1], N_AMOSTRA)
     br_t, br_y = amostra_estratificada(D["br_nativo"][0], D["br_nativo"][1], N_BR)
-    assert (len(tr_t), len(va_t), len(te_t), len(tp_t)) == (872, 220, 116, 116)
+    assert (len(tr_t), len(va_t), len(te_t), len(tp_t)) == (432, 106, 61, 61)
 
     dataset = {
         "meta": {"semente_divisao": I.SEMENTE_DIVISAO, "amostra": N_AMOSTRA, "amostra_br": N_BR,
-                 "nota": "Treino 872 = 436 originais (EN/DE) + 436 traduções (PT); validação 220 = 110 + 110; os primeiros n_orig textos são os originais e os demais, as traduções alinhadas (um texto e a sua tradução ficam do mesmo lado). Testes do deepset: EN/DE (116) e PT (116). neuralchemy e xTRam1: 300 textos; BR-synthetic: 200 textos (amostras estratificadas e determinísticas)."},
+                 "nota": "Treino 432 = 216 textos em inglês + 216 traduções (PT); validação 106 = 53 + 53; os primeiros n_orig textos são os originais e os demais, as traduções alinhadas (um texto e a sua tradução ficam do mesmo lado). Testes do deepset: EN (61) e PT (61, traduções dos mesmos textos). Observação: o deepset original mistura inglês e alemão (e poucas outras línguas); os textos em alemão e em outras línguas foram descartados, não convertidos, e restam 330 textos em inglês (269 de treino e 61 de teste). Testes pequenos (61 por língua): resultados indicativos. neuralchemy e xTRam1: 300 textos; BR-synthetic: 200 textos (amostras estratificadas e determinísticas)."},
         "fontes": {
-            "deepset": {"nome": "deepset/prompt-injections", "url": "https://huggingface.co/datasets/deepset/prompt-injections", "licenca": "Apache-2.0 (conforme o cartão do conjunto)"},
+            "deepset": {"nome": "deepset/prompt-injections", "url": "https://huggingface.co/datasets/deepset/prompt-injections", "licenca": "Apache-2.0 (conforme o cartão do conjunto); o original mistura inglês e alemão (e poucas outras línguas): alemão e demais línguas descartados, não convertidos"},
             "deepset_pt": {"nome": "deepset/prompt-injections, tradução para pt-BR", "url": "https://github.com/epineto/prompt-injection-dl-unisinos/blob/main/data/deepset_pt.json", "licenca": "obra derivada do deepset (Apache-2.0), com atribuição; tradução automática por LLM, verificada por amostragem; não é fala nativa"},
             "neuralchemy": {"nome": "neuralchemy/Prompt-injection-dataset (core, test)", "url": "https://huggingface.co/datasets/neuralchemy/Prompt-injection-dataset", "licenca": "Apache-2.0"},
             "xtram1": {"nome": "xTRam1/safe-guard-prompt-injection (test)", "url": "https://huggingface.co/datasets/xTRam1/safe-guard-prompt-injection", "licenca": "não declarada no cartão do conjunto; sintético; amostra de 300 textos apenas para demonstração acadêmica"},
@@ -93,7 +93,7 @@ def main():
 
     V = I.Vetorizador(max_vocab=2000, min_df=2).ajustar(tr_t)
     n = len(V.vocab)
-    assert n == 1863
+    assert n == 788
     vocab = {"termos": V.vocab, "idf": [float(f"{x:.12g}") for x in V.idf], "n_documentos": len(tr_t), "min_df": 2, "max_vocab": 2000}
     (DATA / "vocab.json").write_text(json.dumps(vocab, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
@@ -103,18 +103,18 @@ def main():
     mt = I.metricas(te_y, I.prever(m, V.transformar(te_t)))
     mp = I.metricas(tp_y, I.prever(m, V.transformar(tp_t)))
     # igual às matrizes de confusão da semente 0 dos resultados (info.json)
-    assert [mt[k] for k in ("tp", "fp", "fn", "tn")] == [49, 1, 11, 55], mt
-    assert [mp[k] for k in ("tp", "fp", "fn", "tn")] == [55, 0, 5, 56], mp
+    assert [mt[k] for k in ("tp", "fp", "fn", "tn")] == [25, 1, 8, 27], mt
+    assert [mp[k] for k in ("tp", "fp", "fn", "tn")] == [27, 0, 6, 28], mp
     W1 = m[0].weight.detach().numpy().T      # (V, H)
     b1 = m[0].bias.detach().numpy()
     W2 = m[2].weight.detach().numpy().ravel()  # (H,)
     b2 = m[2].bias.detach().numpy()
-    modelo = {"V": n, "H": H, "otimizador": "Adam", "lr": LR, "semente": SEMENTE, "epocas": EPOCAS, "batch": BATCH, "melhor_epoca": int(ep), "treino": "bilíngue (EN/DE + PT)",
+    modelo = {"V": n, "H": H, "otimizador": "Adam", "lr": LR, "semente": SEMENTE, "epocas": EPOCAS, "batch": BATCH, "melhor_epoca": int(ep), "treino": "bilíngue (EN + PT)",
               "n_parametros": I.n_parametros(n, H), "precisao": "float32 arredondado a 6 algarismos significativos",
               "W1": arred(W1), "b1": arred(b1), "W2": arred(W2), "b2": arred(b2),
               "teste_python": {"en": {k: mt[k] for k in ("f1", "auc", "tp", "fp", "fn", "tn")}, "pt": {k: mp[k] for k in ("f1", "auc", "tp", "fp", "fn", "tn")}}}
     (DATA / "modelo.json").write_text(json.dumps(modelo, separators=(",", ":")), encoding="utf-8")
-    print("modelo: melhor época", ep, "| EN/DE", {k: round(v, 4) if isinstance(v, float) else v for k, v in mt.items()}, "| PT", {k: round(v, 4) if isinstance(v, float) else v for k, v in mp.items()})
+    print("modelo: melhor época", ep, "| EN", {k: round(v, 4) if isinstance(v, float) else v for k, v in mt.items()}, "| PT", {k: round(v, 4) if isinstance(v, float) else v for k, v in mp.items()})
 
     # --- resultados.json (a partir dos CSV do trabalho; nenhum número é calculado aqui além de médias das curvas) ---
     info = json.loads((RES / "info.json").read_text())
@@ -151,7 +151,8 @@ def main():
         "idiomas": [{"treino": r["treino"], "conjunto": r["conjunto"], "vocab": int(r["vocab"]), **{k: num(r[k]) for k in ("f1", "f1_dp", "auc", "prec", "rec")}} for r in ler_csv("tab_idiomas.csv")],
         "final": final,
         "final_semente0": final_s0,
-        "trabalho1": [{"detector": r["detector"], "conjunto": r["conjunto"], "f1": num(r["f1"]), "f1_dp": num(r["f1_dp"]), "auc": num(r["auc"]), "n_sementes": int(r["n_sementes"])} for r in ler_csv("ref_trabalho1.csv")],
+        # (trabalho1: exclui o teste EN/DE completo (116) do Trabalho 01; só o recorte em inglês (61) é comparável)
+        "trabalho1": [{"detector": r["detector"], "conjunto": r["conjunto"], "f1": num(r["f1"]), "f1_dp": num(r["f1_dp"]), "auc": num(r["auc"]), "n_sementes": int(r["n_sementes"])} for r in ler_csv("ref_trabalho1.csv") if r["conjunto"] != "deepset (teste, em-distribuição)"],
         "termos": [{"termo": r["termo"], "queda": num(r["queda_media_prob"]), "n": int(r["n_textos"])} for r in ler_csv("tab_termos_importantes.csv")],
         "custo": custo,
     }

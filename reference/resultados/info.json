@@ -14,29 +14,29 @@
  ],
  "traducao_identicos_pct": 0.0,
  "dif_tfidf_sklearn": 1.6653345369377348e-16,
- "gradcheck_max_abs_err": 5.551115123125783e-17,
- "H_minimo_estrito": 512,
+ "gradcheck_max_abs_err": 2.7755575615628914e-17,
+ "H_minimo_estrito": 32,
  "matriz_confusao_s0_en": {
-  "tp": 49,
+  "tp": 25,
   "fp": 1,
-  "fn": 11,
-  "tn": 55
+  "fn": 8,
+  "tn": 27
  },
  "matriz_confusao_s0_pt": {
-  "tp": 55,
+  "tp": 27,
   "fp": 0,
-  "fn": 5,
-  "tn": 56
+  "fn": 6,
+  "tn": 28
  },
- "latencia_mlp_ms_por_texto": 0.15402502194046974,
- "parametros_mlp": 59681,
- "H_final": 32,
+ "latencia_mlp_ms_por_texto": 0.1792461316157234,
+ "parametros_mlp": 6321,
+ "H_final": 8,
  "lr_melhor": {
   "Adam": 0.001,
-  "RMSProp": 0.01,
+  "RMSProp": 0.001,
   "SGD": 1.0,
   "SGD+Momentum": 0.1
  },
- "vocab": 1863,
+ "vocab": 788,
  "C_logreg": 100
 }

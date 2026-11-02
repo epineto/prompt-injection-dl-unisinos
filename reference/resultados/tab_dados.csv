@@ -1,8 +1,8 @@
 conjunto,n,injecao,pct_injecao
-treino bilíngue (EN/DE + PT),872,324,37.2
-validação bilíngue,220,82,37.3
-deepset EN/DE (teste),116,60,51.7
-deepset PT (teste),116,60,51.7
+treino bilíngue (EN + PT),432,148,34.3
+validação bilíngue,106,36,34.0
+deepset EN (teste),61,33,54.1
+deepset PT (teste),61,33,54.1
 neuralchemy (OOD),942,552,58.6
 xTRam1 (OOD),1000,316,31.6
 "BR-synthetic (PT nativo, OOD)",1000,400,40.0

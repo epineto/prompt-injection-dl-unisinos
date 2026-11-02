@@ -67,7 +67,7 @@ out["mlp"] = {"H": H0, "textos": tx, "y": ty.tolist(), "W1": r(P["W1"], 17), "b1
               "p": r(p, 15), "perda": float(perda), "g_W1": r(g["W1"], 15), "g_b1": r(g["b1"], 15), "g_W2": r(g["W2"], 15), "g_b2": r(g["b2"], 15)}
 
 # --- otimizadores: 3 passos completos (lote inteiro) com PyTorch em float64 ---
-CFG = {"SGD": dict(lr=1.0), "SGD+Momentum": dict(lr=0.1), "RMSProp": dict(lr=0.01), "Adam": dict(lr=0.001)}
+CFG = {"SGD": dict(lr=1.0), "SGD+Momentum": dict(lr=0.1), "RMSProp": dict(lr=0.001), "Adam": dict(lr=0.001)}
 Xt = torch.tensor(X, dtype=torch.float64)
 yt = torch.tensor(ty, dtype=torch.float64).view(-1, 1)
 out["otimizadores"] = {}

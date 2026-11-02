@@ -36,7 +36,7 @@ def carregar_pt():
 
 def carregar_dados(n_xtram=1000, br=True):
     """Baixa os datasets do Hugging Face Hub (ou usa o cache local; defina HF_HUB_OFFLINE=1 para forçar o modo offline).
-    Em-distribuição: deepset (EN/DE) e a sua tradução para português (alinhada, mesma divisão). Fora da distribuição: neuralchemy,
+    Em-distribuição: deepset (só a parte em inglês) e a sua tradução para português (alinhada, mesma divisão). Fora da distribuição: neuralchemy,
     xTRam1 (inglês) e, se br=True, o teste do ai-safety-brazil/prompt-injection-br-synthetic (português nativo, sintético)."""
     from datasets import load_dataset
     ds = load_dataset("deepset/prompt-injections")
@@ -53,11 +53,16 @@ def carregar_dados(n_xtram=1000, br=True):
         k = int(round(n_xtram * len(ic) / len(y)))
         idx += list(rng.choice(ic, k, replace=False))
     idx = sorted(idx)
+    # O deepset original mistura inglês e alemão (e algumas outras línguas): só os textos em INGLÊS (e as suas traduções) são usados;
+    # os demais foram descartados, não convertidos (índices em pt["indices_en"]).
+    ie_tr, ie_te = pt["indices_en"]["treino"], pt["indices_en"]["teste"]
+    ytr, yte = np.array(ds["train"]["label"]), np.array(ds["test"]["label"])
     d = {
-        "treino_total": (list(ds["train"]["text"]), np.array(ds["train"]["label"])),
-        "treino_total_pt": list(pt["treino"]),
-        "teste": (list(ds["test"]["text"]), np.array(ds["test"]["label"])),
-        "teste_pt": (list(pt["teste"]), np.array(ds["test"]["label"])),
+        "treino_total": ([ds["train"]["text"][i] for i in ie_tr], ytr[ie_tr]),
+        "treino_total_pt": [pt["treino"][i] for i in ie_tr],
+        "teste": ([ds["test"]["text"][i] for i in ie_te], yte[ie_te]),
+        "teste_pt": ([pt["teste"][i] for i in ie_te], yte[ie_te]),
+        "indices_en": (ie_tr, ie_te),
         "neuralchemy": (list(nc["text"]), np.array(nc["label"])),
         "xtram1": ([xt["text"][i] for i in idx], y[idx]),
     }
