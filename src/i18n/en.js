@@ -90,6 +90,7 @@ export default {
   'otim.t': 'Compare optimizers',
   'otim.lead': 'The four optimizers of Lecture 4 train the same network (H = 8, bilingual training), with the same data and the same seed. Each uses the rate chosen on validation loss in the assignment: SGD 1, Momentum 0.1, RMSProp 0.001 and Adam 0.001.',
   'otim.mult': 'Multiply the rate by',
+  'otim.m01': '×0.1',
   'otim.mult_d': '<strong>What to look at:</strong> with ×10 the rate is too large (oscillation and divergence); with ×0.1, too small (slowness). Each optimizer has its own good range (Lecture 4).',
   'otim.go': 'Compare',
   'otim.g_treino': 'Training loss', 'otim.g_val': 'Validation loss',

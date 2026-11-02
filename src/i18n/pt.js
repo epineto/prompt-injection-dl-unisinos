@@ -90,6 +90,7 @@ export default {
   'otim.t': 'Comparar otimizadores',
   'otim.lead': 'Os quatro otimizadores da Aula 4 treinam a mesma rede (H = 8, treino bilíngue), com os mesmos dados e a mesma semente. Cada um usa a taxa escolhida pela perda de validação no trabalho: SGD 1, Momentum 0,1, RMSProp 0,001 e Adam 0,001.',
   'otim.mult': 'Multiplicar a taxa por',
+  'otim.m01': '×0,1',
   'otim.mult_d': '<strong>O que olhar:</strong> com ×10 a taxa fica grande demais (oscilações e divergência); com ×0,1, pequena demais (lentidão). Cada otimizador tem a sua faixa boa (Aula 4).',
   'otim.go': 'Comparar',
   'otim.g_treino': 'Perda de treino', 'otim.g_val': 'Perda de validação',
