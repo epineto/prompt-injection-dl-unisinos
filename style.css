@@ -12,7 +12,7 @@ h1, h2, h3, h4 { color: var(--azul); line-height: 1.2; margin: 0; }
 h2 { font-size: 1.45rem; margin-bottom: .35rem; }
 h3 { font-size: 1.05rem; margin: 0 0 .6rem; }
 h4 { font-size: .92rem; margin: .8rem 0 .3rem; }
-p { margin: .4rem 0; }
+p { margin: .4rem 0; text-align: justify; hyphens: auto; }
 a { color: var(--azul); text-underline-offset: 2px; }
 code { background: var(--claro); padding: .05em .35em; border-radius: 3px; font-size: .92em; }
 pre { background: var(--claro); padding: .7rem .9rem; border-radius: 6px; overflow-x: auto; font-size: .85rem; line-height: 1.45; }
@@ -45,7 +45,7 @@ pre code { background: none; padding: 0; }
 main { max-width: var(--larg); margin: 0 auto; padding: 1.1rem 1rem 2rem; outline: none; }
 .js .sec:not(.ativa) { display: none; }
 .sec { scroll-margin-top: calc(var(--nav-h) + .5rem); }
-.lead { color: var(--texto-suave); margin: 0 0 1rem; max-width: 80ch; }
+.lead { color: var(--texto-suave); margin: 0 0 1rem; }
 .aviso { background: #FFF4E0; border: 1px solid #E5B567; color: #5A3A00; padding: .6rem .8rem; border-radius: 6px; }
 .rodape { background: var(--azul); color: #D5DAF5; text-align: center; padding: 1rem; font-size: .85rem; }
 .rodape p { margin: .15rem 0; }
@@ -208,3 +208,5 @@ fieldset { border: 0; margin: 0; padding: 0; }
 .hero-nums strong { display: block; font-size: 1.5rem; }
 .hero-nums span { font-size: .82rem; color: #D5DAF5; }
 @media (max-width: 900px) { .hero-in { grid-template-columns: minmax(0, 1fr); } }
+
+.metr, .exemplo-pipe { text-align: left; hyphens: manual; }

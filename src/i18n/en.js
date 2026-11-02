@@ -36,6 +36,8 @@ export default {
   'testar.entrada': 'Text',
   'testar.exemplos': 'Ready-made examples:',
   'testar.ex.seg_en': 'Safe (EN)', 'testar.ex.seg_de': 'Safe (DE)', 'testar.ex.inj_en': 'Classic injection (EN)', 'testar.ex.inj_de': 'Injection (DE)', 'testar.ex.dificil': 'Hard case (obfuscated)',
+  'testar.ex.seg_pt1': 'Safe (PT)', 'testar.ex.seg_pt2': 'Safe: recipe (PT)', 'testar.ex.inj_pt1': 'Classic injection (PT)', 'testar.ex.inj_pt2': 'Injection: password (PT)', 'testar.ex.dificil_pt': 'Hard case (obfuscated, PT)',
+  'testar.pt_nota': 'Language note: the model was trained on English and German texts (deepset). Portuguese sentences work only in part, because they share a few terms with the vocabulary (such as “ignore”, “prompt”, “e” and “que”); the other words appear greyed out and do not contribute. This is the language limitation discussed in the report.',
   'testar.limiar': 'Decision threshold',
   'testar.limiar_d': 'Above the threshold the text is classified as an injection. Raising it makes the filter more permissive; lowering it, stricter (Lecture 2: loss is not a metric; the threshold is a cost choice).',
   'testar.saida': 'Injection probability',

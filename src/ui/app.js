@@ -4,7 +4,7 @@ import { $, $$ } from './util.js';
 import { prepararDados, modeloDeJson } from '../core/dados.js';
 import { criarVetorizador } from '../core/texto.js';
 import { prever } from '../core/mlp.js';
-import { iniciarTestar, analisar, EXEMPLOS } from './testar.js';
+import { iniciarTestar, analisar, exemploPadrao } from './testar.js';
 import { iniciarTreinar } from './treinar.js';
 import { iniciarOtimizadores } from './otimizadores.js';
 import { iniciarBackprop } from './backprop.js';
@@ -23,7 +23,7 @@ function rota(primeira) {
 }
 
 function introAoVivo(S) {
-  const ex = EXEMPLOS[2].texto;
+  const ex = exemploPadrao().texto;
   const a = analisar(ex, S);
   $('#pipe-texto').textContent = ex;
   $('#pipe-a').textContent = '"' + ex.slice(0, 26) + '…"';

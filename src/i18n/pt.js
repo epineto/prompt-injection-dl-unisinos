@@ -36,6 +36,8 @@ export default {
   'testar.entrada': 'Texto',
   'testar.exemplos': 'Exemplos prontos:',
   'testar.ex.seg_en': 'Seguro (EN)', 'testar.ex.seg_de': 'Seguro (DE)', 'testar.ex.inj_en': 'Injeção clássica (EN)', 'testar.ex.inj_de': 'Injeção (DE)', 'testar.ex.dificil': 'Caso difícil (ofuscado)',
+  'testar.ex.seg_pt1': 'Seguro (PT)', 'testar.ex.seg_pt2': 'Seguro: receita (PT)', 'testar.ex.inj_pt1': 'Injeção clássica (PT)', 'testar.ex.inj_pt2': 'Injeção: senha (PT)', 'testar.ex.dificil_pt': 'Caso difícil (ofuscado, PT)',
+  'testar.pt_nota': 'Nota sobre o idioma: o modelo foi treinado com textos em inglês e alemão (deepset). Frases em português funcionam apenas em parte, porque compartilham alguns termos com o vocabulário (como “ignore”, “prompt”, “e” e “que”); as demais palavras aparecem acinzentadas e não contribuem. É a limitação de idioma discutida no relatório.',
   'testar.limiar': 'Limiar de decisão',
   'testar.limiar_d': 'Acima do limiar, o texto é classificado como injeção. Subir o limiar deixa o filtro mais permissivo; descer, mais rigoroso (Aula 2: perda não é métrica; o limiar é uma escolha de custo).',
   'testar.saida': 'Probabilidade de injeção',
