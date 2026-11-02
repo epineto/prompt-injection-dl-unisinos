@@ -13,8 +13,8 @@ const y = Float64Array.from(M.y);
 const pesos = () => ({ V: vet.V, H: M.H, W1: Float64Array.from(M.W1), b1: Float64Array.from(M.b1), W2: Float64Array.from(M.W2), b2: Float64Array.from(M.b2) });
 
 test('contagem de parâmetros V·H+H+H+1 (Aula 4)', () => {
-  assert.equal(nParametros(983, 32), 31521);
-  assert.equal(nParametros(983, 2), 1971);
+  assert.equal(nParametros(1863, 32), 59681);
+  assert.equal(nParametros(1863, 2), 3731);
   assert.equal(nParametros(2, 2) , 2 * 2 + 2 + 2 + 1);
 });
 
@@ -95,11 +95,11 @@ test('semântica: SGD+Momentum acumula buf=μ·buf+g; Adam dá passo de ≈ lr n
 });
 
 test('inicialização He tem desvio ≈ sqrt(2/V) e é determinística por semente', () => {
-  const a = inicializar(983, 32, mulberry32(0)), b = inicializar(983, 32, mulberry32(0));
+  const a = inicializar(1863, 32, mulberry32(0)), b = inicializar(1863, 32, mulberry32(0));
   assert.deepEqual(a.W1, b.W1);
   const m = a.W1.reduce((s, v) => s + v, 0) / a.W1.length;
   const sd = Math.sqrt(a.W1.reduce((s, v) => s + (v - m) ** 2, 0) / a.W1.length);
-  assert.ok(Math.abs(sd - Math.sqrt(2 / 983)) < 0.1 * Math.sqrt(2 / 983));
+  assert.ok(Math.abs(sd - Math.sqrt(2 / 1863)) < 0.1 * Math.sqrt(2 / 1863));
   assert.ok(a.b1.every((v) => v === 0));
 });
 

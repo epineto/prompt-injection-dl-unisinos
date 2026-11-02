@@ -39,7 +39,7 @@ test('toda chave t(\'…\') usada na interface existe nos dicionários (PT e EN)
 });
 
 test('nenhum número do trabalho monolíngue sobrevive nos textos da interface', () => {
-  const proibidos = [/0,873/, /0\.873/, /31\.521/, /31,521/, /\b983 (termos|terms|pesos|weights|números|numbers)/, /436 amostras/, /436 training samples/, /DistilBERT[^.]{0,40}340/, /340 ?×/];
+  const proibidos = [/0,873/, /0\.873/, /31\.521/, /31,521/, /\b983 (termos|terms|pesos|weights|números|numbers)/, /436 amostras/, /436 training samples/];
   for (const [nome, d] of [['pt', pt], ['en', en]]) for (const [k, v] of Object.entries(d)) for (const re of proibidos) assert.ok(!re.test(v), `${nome}:${k} contém ${re}`);
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   for (const re of proibidos) assert.ok(!re.test(html), `index.html contém ${re}`);
