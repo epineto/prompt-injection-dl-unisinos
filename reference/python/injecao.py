@@ -17,13 +17,33 @@ import numpy as np
 SEMENTE_DIVISAO = 2026
 
 
-def carregar_dados(n_xtram=1000):
+URL_PT = "https://raw.githubusercontent.com/epineto/prompt-injection-dl-unisinos/main/data/deepset_pt.json"
+
+
+def carregar_pt():
+    """Tradução para português (pt-BR) do deepset/prompt-injections, alinhada item a item com o original (ver dados/LEIA-ME).
+    Procura o arquivo localmente (dados/, ../dados/, data/) e, se não achar (p.ex. no Colab), baixa do repositório."""
+    import json
+    from pathlib import Path
+    for base in (Path.cwd(), Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()):
+        for rel in ("dados/deepset_pt.json", "../dados/deepset_pt.json", "data/deepset_pt.json", "../data/deepset_pt.json", "deepset_pt.json"):
+            f = (base / rel).resolve()
+            if f.exists():
+                return json.loads(f.read_text())
+    import urllib.request
+    return json.loads(urllib.request.urlopen(URL_PT, timeout=60).read().decode("utf-8"))
+
+
+def carregar_dados(n_xtram=1000, br=True):
     """Baixa os datasets do Hugging Face Hub (ou usa o cache local; defina HF_HUB_OFFLINE=1 para forçar o modo offline).
-    deepset (treino/teste) = em-distribuição; neuralchemy (teste) e xTRam1 (amostra do teste) = fora da distribuição."""
+    Em-distribuição: deepset (EN/DE) e a sua tradução para português (alinhada, mesma divisão). Fora da distribuição: neuralchemy,
+    xTRam1 (inglês) e, se br=True, o teste do ai-safety-brazil/prompt-injection-br-synthetic (português nativo, sintético)."""
     from datasets import load_dataset
     ds = load_dataset("deepset/prompt-injections")
     nc = load_dataset("neuralchemy/Prompt-injection-dataset", "core")["test"]
     xt = load_dataset("xTRam1/safe-guard-prompt-injection")["test"]
+    pt = carregar_pt()
+    assert len(pt["treino"]) == len(ds["train"]) and len(pt["teste"]) == len(ds["test"]), "tradução desalinhada com o deepset"
     rng = np.random.RandomState(SEMENTE_DIVISAO)
     # amostra estratificada e determinística do xTRam1 (mesma regra do Trabalho 01: n=1000)
     y = np.array(xt["label"])
@@ -35,23 +55,30 @@ def carregar_dados(n_xtram=1000):
     idx = sorted(idx)
     d = {
         "treino_total": (list(ds["train"]["text"]), np.array(ds["train"]["label"])),
+        "treino_total_pt": list(pt["treino"]),
         "teste": (list(ds["test"]["text"]), np.array(ds["test"]["label"])),
+        "teste_pt": (list(pt["teste"]), np.array(ds["test"]["label"])),
         "neuralchemy": (list(nc["text"]), np.array(nc["label"])),
         "xtram1": ([xt["text"][i] for i in idx], y[idx]),
     }
+    if br:
+        brd = load_dataset("ai-safety-brazil/prompt-injection-br-synthetic")["test"]
+        d["br_nativo"] = (list(brd["text"]), np.array(brd["label"]))
     return d
 
 
-def dividir_treino_val(textos, y, frac_val=0.2, semente=SEMENTE_DIVISAO):
-    """Divisão estratificada fixa treino/validação (a validação serve a TODAS as escolhas; o teste só ao final)."""
+def dividir_treino_val(y, frac_val=0.2, semente=SEMENTE_DIVISAO):
+    """Divisão estratificada fixa treino/validação, devolvida como ÍNDICES (para aplicar o mesmo corte ao original e à tradução:
+    um texto e a sua tradução ficam sempre do mesmo lado, sem vazamento). A validação serve a TODAS as escolhas; o teste só ao final."""
     rng = np.random.RandomState(semente)
     iv = []
     for c in (0, 1):
         ic = np.where(y == c)[0]
         iv += list(rng.choice(ic, int(round(frac_val * len(ic))), replace=False))
     iv = np.array(sorted(iv))
-    it = np.array([i for i in range(len(y)) if i not in set(iv.tolist())])
-    return ([textos[i] for i in it], y[it]), ([textos[i] for i in iv], y[iv])
+    sv = set(iv.tolist())
+    it = np.array([i for i in range(len(y)) if i not in sv])
+    return it, iv
 
 
 # ----------------------------------------------------------------------------------------------------------------------

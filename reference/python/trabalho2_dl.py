@@ -1,6 +1,6 @@
 # %% [markdown]
 # # Trabalho 02 — Deep Learning (PPGCA/Unisinos, 2026/2)
-# **Detecção de *prompt injection* com um MLP sobre TF-IDF: do backpropagation à mão aos otimizadores**
+# **Detecção de *prompt injection* em inglês e português com um MLP sobre TF-IDF: do backpropagation à mão aos otimizadores**
 #
 # Aluno: Epitácio Neto · Professor: Felipe André Zeiser
 #
@@ -8,19 +8,26 @@
 # tenta fazer o modelo ignorar as instruções originais (p.ex. "ignore as instruções anteriores e..."). O objetivo é um detector
 # **barato e rápido** que classifique cada texto como *seguro* (0) ou *injeção* (1) e funcione como primeiro filtro.
 #
+# **Duas línguas.** O detector é treinado com texto em **inglês/alemão** (deepset/prompt-injections) **e em português do Brasil**
+# (tradução alinhada, texto a texto, do mesmo conjunto; um texto e a sua tradução ficam sempre do mesmo lado da divisão, sem
+# vazamento). A tradução é automática por LLM e foi verificada por amostragem; não é fala nativa. Como verificação nativa em
+# português, usa-se o teste do `ai-safety-brazil/prompt-injection-br-synthetic` (sintético, CC-BY-4.0) como conjunto fora da distribuição.
+#
 # **Escopo e relação com as aulas.** O trabalho aplica, em uma tarefa real, o que foi visto: texto → tokens → TF-IDF (Aula 6);
 # rede densa (MLP) com ReLU/sigmoide e perda de entropia cruzada binária (Aulas 1 e 2); backpropagation à mão e verificação
 # numérica (Aulas 2 e 3); comparação dos otimizadores SGD, Momentum, RMSProp e Adam (Aula 4); escolha de arquitetura justificada
 # frente a um modelo pré-treinado (Aulas 3 e 5). Apenas **datasets públicos** são usados.
 #
 # **Como executar.** `python trabalho2_dl.py` (CPU, ~10 min) ou abrir o notebook. Os datasets são baixados do Hugging Face Hub
-# (`deepset/prompt-injections`, `neuralchemy/Prompt-injection-dataset` config `core`, `xTRam1/safe-guard-prompt-injection`).
+# (`deepset/prompt-injections`, `neuralchemy/Prompt-injection-dataset` config `core`, `xTRam1/safe-guard-prompt-injection`,
+# `ai-safety-brazil/prompt-injection-br-synthetic`); a tradução (`deepset_pt.json`) vem de `dados/` ou do repositório do laboratório.
 # Resultados em `resultados/` e figuras em `figuras/`. Um laboratório web interativo, que repete os experimentos no navegador,
 # acompanha o trabalho (ver README do repositório).
 #
-# **Protocolo.** Treino/validação fixos (80/20 do treino do deepset, estratificado); **todas as escolhas** (taxa de aprendizado,
-# tamanho da camada oculta, época de parada) usam só a validação; o teste do deepset (em-distribuição) e dois conjuntos
-# fora-da-distribuição (neuralchemy, xTRam1) são apenas relatados. 5 sementes (0 a 4); média ± desvio-padrão.
+# **Protocolo.** Treino/validação fixos (80/20 do treino do deepset, estratificado, aplicado ao original e à tradução); **todas as
+# escolhas** (taxa de aprendizado, tamanho da camada oculta, época de parada) usam só a validação bilíngue; os testes do deepset
+# (EN/DE e PT, em-distribuição) e três conjuntos fora-da-distribuição (neuralchemy, xTRam1, BR-synthetic) são apenas relatados.
+# 5 sementes (0 a 4); média ± desvio-padrão.
 
 # %%
 import json, os, sys, time, warnings
@@ -52,19 +59,28 @@ def salvar_json(obj, nome): (RES / nome).write_text(json.dumps(obj, ensure_ascii
 
 # %% [markdown]
 # ## 1. Dados
-# O deepset (546 treino / 116 teste) é pequeno e **bilíngue** (inglês e alemão). Os conjuntos fora-da-distribuição servem para
-# medir quanto o detector depende do vocabulário visto no treino.
+# O deepset (546 treino / 116 teste) é pequeno e **bilíngue** (inglês e alemão); a sua tradução para o português (pt-BR) dobra o
+# corpus (872 treinos). Os conjuntos fora-da-distribuição servem para medir quanto o detector depende do vocabulário visto no treino.
 
 # %%
 D = I.carregar_dados()
-(tr_t, tr_y), (va_t, va_y) = I.dividir_treino_val(*D["treino_total"])
-te_t, te_y = D["teste"]
-CONJ = {"deepset (teste)": D["teste"], "neuralchemy (OOD)": D["neuralchemy"], "xTRam1 (OOD)": D["xtram1"]}
-tab = [{"conjunto": "treino", "n": len(tr_y), "injecao": int(tr_y.sum())}, {"conjunto": "validação", "n": len(va_y), "injecao": int(va_y.sum())}]
+itr, iva = I.dividir_treino_val(D["treino_total"][1])
+tr0 = [D["treino_total"][0][i] for i in itr]; trp = [D["treino_total_pt"][i] for i in itr]; tr_y1 = D["treino_total"][1][itr]
+va0 = [D["treino_total"][0][i] for i in iva]; vap = [D["treino_total_pt"][i] for i in iva]; va_y1 = D["treino_total"][1][iva]
+MODOS = {"bilingue": (tr0 + trp, np.concatenate([tr_y1, tr_y1]), va0 + vap, np.concatenate([va_y1, va_y1])),
+         "orig": (tr0, tr_y1, va0, va_y1), "pt": (trp, tr_y1, vap, va_y1)}
+tr_t, tr_y, va_t, va_y = MODOS["bilingue"]
+CONJ = {"deepset EN/DE (teste)": D["teste"], "deepset PT (teste)": D["teste_pt"], "neuralchemy (OOD)": D["neuralchemy"],
+        "xTRam1 (OOD)": D["xtram1"], "BR-synthetic (PT nativo, OOD)": D["br_nativo"]}
+CONJ_BIL = "bilíngue (teste EN/DE + PT)"
+tab = [{"conjunto": "treino bilíngue (EN/DE + PT)", "n": len(tr_y), "injecao": int(tr_y.sum())}, {"conjunto": "validação bilíngue", "n": len(va_y), "injecao": int(va_y.sum())}]
 tab += [{"conjunto": k, "n": len(v[1]), "injecao": int(v[1].sum())} for k, v in CONJ.items()]
 tab_dados = pd.DataFrame(tab); tab_dados["pct_injecao"] = (100 * tab_dados.injecao / tab_dados.n).round(1)
 print(tab_dados.to_string(index=False)); tab_dados.to_csv(RES / "tab_dados.csv", index=False)
-print("Exemplos:", [(t[:70], int(l)) for t, l in list(zip(tr_t, tr_y))[:3]])
+print("Exemplos (original → tradução):", [(a[:50], b[:50]) for a, b in list(zip(tr0, trp))[:3]])
+# Verificação simples da tradução: proporção de textos idênticos ao original (esperado baixo; os já em português ou só código ficam iguais)
+ident = float(np.mean([a.strip() == b.strip() for a, b in zip(D["treino_total"][0], D["treino_total_pt"])]))
+print("textos de treino idênticos ao original após a tradução:", round(100 * ident, 1), "%"); INFO["traducao_identicos_pct"] = 100 * ident
 
 # %% [markdown]
 # ## 2. Texto → vetor (Aula 6)
@@ -134,14 +150,21 @@ LR_BEST = {o: float(g.loc[g.val_loss.idxmin(), "lr"]) for o, g in resumo_lr.grou
 print(resumo_lr.round(4).to_string(index=False)); print("melhores taxas (validação):", LR_BEST, f"[{time.time()-t0:.0f}s]")
 
 # %% [markdown]
-# ## 5. Experimento principal: SGD × Momentum × RMSProp × Adam (5 sementes)
-# **Hipótese (fixada antes dos resultados, Aula 4):** com a taxa certa para cada um, os métodos adaptativos (RMSProp/Adam)
-# atingem menor perda de validação em menos épocas do que o SGD puro; e a taxa ótima do SGD é uma ordem de grandeza (ou mais)
-# maior que a do Adam.
+# ## 5. Experimento principal: SGD × Momentum × RMSProp × Adam (5 sementes, treino bilíngue)
+# **Hipótese H1 (fixada antes dos resultados, Aula 4):** com a taxa certa para cada um, os métodos adaptativos (RMSProp/Adam)
+# atingem a melhor perda de validação em menos épocas do que o SGD puro (e, como expectativa auxiliar, com perda menor); e a taxa
+# ótima do SGD é uma ordem de grandeza (ou mais) maior que a do Adam.
 
 # %%
-def metr_conj(model, limiar=0.5):
-    return {k: I.metricas(CONJ[k][1], I.prever(model, XC[k]), limiar) for k in CONJ}
+EN, PT_ = "deepset EN/DE (teste)", "deepset PT (teste)"
+def metr_de_probs(P, limiar=0.5):
+    """Métricas por conjunto a partir das probabilidades P[conjunto]; acrescenta o teste bilíngue (EN/DE + PT concatenados)."""
+    out = {k: I.metricas(CONJ[k][1], P[k], limiar) for k in CONJ}
+    out[CONJ_BIL] = I.metricas(np.concatenate([CONJ[EN][1], CONJ[PT_][1]]), np.concatenate([P[EN], P[PT_]]), limiar)
+    return out
+def metr_conj(model, limiar=0.5, XCd=None):
+    XCd = XC if XCd is None else XCd
+    return metr_de_probs({k: I.prever(model, XCd[k]) for k in CONJ}, limiar)
 curvas, rows = {}, []
 for otim in LR_GRID:
     cs = []
@@ -164,8 +187,7 @@ def agg(df, cols, by):
     return pd.DataFrame(out)
 t_otim = agg(principal, ["f1", "auc", "acc", "prec", "rec", "val_loss", "melhor_epoca"], ["otimizador", "conjunto"])
 t_otim["lr"] = t_otim.otimizador.map(LR_BEST); t_otim.to_csv(RES / "tab_otimizadores.csv", index=False)
-print(t_otim[t_otim.conjunto == "deepset (teste)"][["otimizador", "lr", "val_loss", "melhor_epoca", "f1", "f1_dp", "auc", "auc_dp"]].round(4).to_string(index=False))
-# perda de validação em épocas marcadas (velocidade de convergência)
+print(t_otim[t_otim.conjunto.isin([EN, PT_, CONJ_BIL])][["otimizador", "conjunto", "lr", "val_loss", "melhor_epoca", "f1", "f1_dp", "auc", "auc_dp"]].round(4).to_string(index=False))
 marc = [1, 3, 5, 10, 20, 40]
 conv = pd.DataFrame([{"otimizador": o, **{f"ep{e}": float(np.mean(np.array(c["val"])[:, e - 1])) for e in marc}} for o, c in curvas.items()])
 conv.to_csv(RES / "tab_convergencia.csv", index=False); print(conv.round(4).to_string(index=False))
@@ -182,6 +204,7 @@ salvar(fig, FIG / "fig1_otimizadores.png")
 # %% [markdown]
 # ## 6. Capacidade da rede: tamanho da camada oculta (subajuste × sobreajuste)
 # Adam com a melhor taxa; H ∈ {0 (regressão logística), 2, 8, 32, 128, 512}. Contagem de parâmetros: V·H + H + H + 1.
+# **Escolha de H:** menor H cuja perda de validação fica a ≤ 5% da mínima (regra de parcimônia, ver a célula abaixo).
 
 # %%
 rows = []
@@ -190,13 +213,17 @@ for H in (0, 2, 8, 32, 128, 512):
         m, cv, ep = I.treinar_mlp(Xtr, tr_y, Xva, va_y, H=H, otim="Adam", lr=LR_BEST["Adam"], epocas=EPOCAS, batch=BATCH, semente=s)
         mm = metr_conj(m)
         rows.append({"H": H, "semente": s, "parametros": (Xtr.shape[1] + 1) if H == 0 else I.n_parametros(Xtr.shape[1], H), "melhor_epoca": ep,
-                     "treino_loss": cv["treino"][ep - 1], "val_loss": cv["val"][ep - 1], "f1_teste": mm["deepset (teste)"]["f1"],
-                     "auc_teste": mm["deepset (teste)"]["auc"], "f1_nc": mm["neuralchemy (OOD)"]["f1"], "f1_xt": mm["xTRam1 (OOD)"]["f1"]})
+                     "treino_loss": cv["treino"][ep - 1], "val_loss": cv["val"][ep - 1], "f1_en": mm[EN]["f1"], "f1_pt": mm[PT_]["f1"], "f1_bil": mm[CONJ_BIL]["f1"],
+                     "auc_bil": mm[CONJ_BIL]["auc"], "f1_nc": mm["neuralchemy (OOD)"]["f1"], "f1_xt": mm["xTRam1 (OOD)"]["f1"], "f1_br": mm["BR-synthetic (PT nativo, OOD)"]["f1"]})
 cap = pd.DataFrame(rows); cap.to_csv(RES / "capacidade_runs.csv", index=False)
-t_cap = agg(cap, ["treino_loss", "val_loss", "f1_teste", "auc_teste", "f1_nc", "f1_xt", "melhor_epoca"], ["H"]); t_cap["parametros"] = cap.groupby("H", sort=False).parametros.first().values
+t_cap = agg(cap, ["treino_loss", "val_loss", "f1_en", "f1_pt", "f1_bil", "auc_bil", "f1_nc", "f1_xt", "f1_br", "melhor_epoca"], ["H"]); t_cap["parametros"] = cap.groupby("H", sort=False).parametros.first().values
 t_cap.to_csv(RES / "tab_capacidade.csv", index=False)
-print(t_cap[["H", "parametros", "treino_loss", "val_loss", "f1_teste", "f1_teste_dp", "auc_teste"]].round(4).to_string(index=False))
-H_BEST = int(t_cap.loc[t_cap[t_cap.H > 0].val_loss.idxmin(), "H"]); print("H escolhido pela validação:", H_BEST)
+print(t_cap[["H", "parametros", "treino_loss", "val_loss", "f1_en", "f1_pt", "f1_bil", "f1_bil_dp", "auc_bil"]].round(4).to_string(index=False))
+# Regra de parcimônia (adotada APÓS observar a curva, pois as perdas de validação de H=32 a 512 diferem muito pouco): menor H > 0 cuja
+# perda de validação fica no máximo 5% acima da mínima. Sem essa regra, o mínimo estrito escolheria H=512 (≈955 mil parâmetros).
+_c = t_cap[t_cap.H > 0]; H_MIN_ESTRITO = int(_c.loc[_c.val_loss.idxmin(), "H"])
+H_BEST = int(_c[_c.val_loss <= 1.05 * _c.val_loss.min()].H.min())
+INFO["H_minimo_estrito"] = H_MIN_ESTRITO; print("H de menor perda de validação:", H_MIN_ESTRITO, "| H escolhido (parcimônia, ≤5% da mínima):", H_BEST)
 fig, ax = plt.subplots(figsize=(5.2, 3.3))
 xs = np.arange(len(t_cap)); ax.plot(xs, t_cap.treino_loss, "o-", color=COR["azul"], label="treino"); ax.plot(xs, t_cap.val_loss, "s-", color=COR["vermelho"], label="validação")
 ax.set_xticks(xs); ax.set_xticklabels([("0 (logística)" if h == 0 else str(h)) for h in t_cap.H], fontsize=7.5); ax.set_xlabel("neurônios na camada oculta (H)"); ax.set_ylabel("perda na melhor época"); ax.legend(); ax.set_title("Capacidade × generalização")
@@ -213,17 +240,46 @@ for nome, kw in (("BoW binário", dict(modo="bow")), ("TF-IDF (unigramas)", dict
     XCz = {k: Vz.transformar(v[0]) for k, v in CONJ.items()}
     for s in SEMENTES:
         m, cv, ep = I.treinar_mlp(a, tr_y, b, va_y, H=H_BEST, otim="Adam", lr=LR_BEST["Adam"], epocas=EPOCAS, batch=BATCH, semente=s)
-        mm = {k: I.metricas(CONJ[k][1], I.prever(m, XCz[k])) for k in CONJ}
-        rows.append({"representacao": nome, "semente": s, "val_loss": min(cv["val"]), "f1_teste": mm["deepset (teste)"]["f1"], "auc_teste": mm["deepset (teste)"]["auc"],
-                     "f1_nc": mm["neuralchemy (OOD)"]["f1"], "f1_xt": mm["xTRam1 (OOD)"]["f1"]})
+        mm = metr_conj(m, XCd=XCz)
+        rows.append({"representacao": nome, "semente": s, "val_loss": min(cv["val"]), "f1_en": mm[EN]["f1"], "f1_pt": mm[PT_]["f1"], "f1_bil": mm[CONJ_BIL]["f1"], "auc_bil": mm[CONJ_BIL]["auc"],
+                     "f1_nc": mm["neuralchemy (OOD)"]["f1"], "f1_xt": mm["xTRam1 (OOD)"]["f1"], "f1_br": mm["BR-synthetic (PT nativo, OOD)"]["f1"]})
 rep = pd.DataFrame(rows); rep.to_csv(RES / "representacao_runs.csv", index=False)
-t_rep = agg(rep, ["val_loss", "f1_teste", "auc_teste", "f1_nc", "f1_xt"], ["representacao"]); t_rep.to_csv(RES / "tab_representacao.csv", index=False)
-print(t_rep[["representacao", "val_loss", "f1_teste", "f1_teste_dp", "auc_teste", "f1_nc", "f1_xt"]].round(4).to_string(index=False))
+t_rep = agg(rep, ["val_loss", "f1_en", "f1_pt", "f1_bil", "auc_bil", "f1_nc", "f1_xt", "f1_br"], ["representacao"]); t_rep.to_csv(RES / "tab_representacao.csv", index=False)
+print(t_rep[["representacao", "val_loss", "f1_en", "f1_pt", "f1_bil", "f1_bil_dp", "auc_bil", "f1_nc", "f1_xt"]].round(4).to_string(index=False))
 
 # %% [markdown]
-# ## 8. Modelo final, comparação e generalização fora da distribuição
-# Configuração final escolhida **apenas pela validação**: Adam, H e taxa acima. Comparação com a regressão logística e com os
-# números do Trabalho 01 (DistilBERT/BERT-base, mesmo teste do deepset, 3 sementes), lidos de `trabalho1/resultados/`.
+# ## 8. Línguas: treinar só em EN/DE × só em PT × bilíngue
+# **Hipótese H4 (fixada antes dos resultados):** um modelo treinado só em EN/DE generaliza mal para o português (vocabulário
+# disjunto, exceto termos compartilhados), e o treino bilíngue recupera o desempenho em português sem perder em EN/DE.
+# Mesmo protocolo (Adam, H e taxa escolhidos antes), vetorizador ajustado em cada corpus de treino, 5 sementes.
+
+# %%
+rows = []
+for modo, (a_t, a_y, b_t, b_y) in MODOS.items():
+    Vm = I.Vetorizador(max_vocab=2000, min_df=2).ajustar(a_t)
+    A, B = Vm.transformar(a_t), Vm.transformar(b_t)
+    XCm = {k: Vm.transformar(v[0]) for k, v in CONJ.items()}
+    for s in SEMENTES:
+        m, cv, ep = I.treinar_mlp(A, a_y, B, b_y, H=H_BEST, otim="Adam", lr=LR_BEST["Adam"], epocas=EPOCAS, batch=BATCH, semente=s)
+        for k, v in metr_conj(m, XCd=XCm).items():
+            rows.append({"treino": modo, "vocab": len(Vm.vocab), "semente": s, "conjunto": k, "melhor_epoca": ep, **v})
+idi = pd.DataFrame(rows); idi.to_csv(RES / "idiomas_runs.csv", index=False)
+t_idi = agg(idi, ["f1", "auc", "prec", "rec"], ["treino", "conjunto"]); t_idi["vocab"] = t_idi.treino.map(idi.groupby("treino").vocab.first())
+t_idi.to_csv(RES / "tab_idiomas.csv", index=False)
+print(t_idi[t_idi.conjunto.isin([EN, PT_, CONJ_BIL, "BR-synthetic (PT nativo, OOD)"])][["treino", "vocab", "conjunto", "f1", "f1_dp", "auc", "rec"]].round(3).to_string(index=False))
+cols = [EN, PT_, "BR-synthetic (PT nativo, OOD)"]; nomes_t = {"orig": "só EN/DE", "pt": "só PT", "bilingue": "bilíngue"}
+mat = np.array([[t_idi[(t_idi.treino == m_) & (t_idi.conjunto == c)].f1.iloc[0] for c in cols] for m_ in MODOS])
+fig, ax = plt.subplots(figsize=(5.4, 2.9)); im = ax.imshow(mat, vmin=0.3, vmax=1, cmap="Blues")
+ax.set_xticks(range(3)); ax.set_xticklabels(["teste EN/DE", "teste PT\n(trad.)", "BR-synth.\n(PT nativo)"], fontsize=8); ax.set_yticks(range(3)); ax.set_yticklabels([f"treino {nomes_t[m_]}" for m_ in MODOS], fontsize=8)
+for i_ in range(3):
+    for j_ in range(3): ax.text(j_, i_, f"{mat[i_, j_]:.2f}".replace(".", ","), ha="center", va="center", color="white" if mat[i_, j_] > 0.7 else COR["azul"], fontsize=10, fontweight="bold")
+ax.grid(False); ax.set_title("F1 por língua de treino × teste"); salvar(fig, FIG / "fig4_idiomas.png")
+
+# %% [markdown]
+# ## 9. Modelo final, comparação e generalização fora da distribuição
+# Configuração final escolhida **apenas pela validação**: Adam, H e taxa acima, treino bilíngue. Comparação com a regressão
+# logística e com os números do Trabalho 01 (DistilBERT/BERT-base, mesmo teste do deepset EN/DE, 3 sementes), lidos de
+# `trabalho1/resultados/` (só existem para EN/DE e para os conjuntos fora da distribuição em inglês).
 
 # %%
 rows, final_models = [], []
@@ -232,25 +288,27 @@ for s in SEMENTES:
     final_models.append(m)
     for k, v in metr_conj(m).items(): rows.append({"modelo": f"MLP (H={H_BEST}, Adam)", "semente": s, "conjunto": k, **v})
 lr_ = LogisticRegression(C=C_best, max_iter=2000).fit(Xtr, tr_y)
-for k in CONJ: rows.append({"modelo": "Regressão logística + TF-IDF", "semente": 0, "conjunto": k, **I.metricas(CONJ[k][1], lr_.predict_proba(XC[k])[:, 1])})
+for k, v in metr_de_probs({k: lr_.predict_proba(XC[k])[:, 1] for k in CONJ}).items(): rows.append({"modelo": "Regressão logística + TF-IDF", "semente": 0, "conjunto": k, **v})
 final = pd.DataFrame(rows); final.to_csv(RES / "final_runs.csv", index=False)
 t_final = agg(final, ["f1", "auc", "acc", "prec", "rec", "fpr"], ["modelo", "conjunto"]); t_final.to_csv(RES / "tab_final.csv", index=False)
 print(t_final[["modelo", "conjunto", "f1", "f1_dp", "auc", "prec", "rec", "fpr"]].round(3).to_string(index=False))
 T1 = Path("/home/ubuntu/meridianseal/unisinos/dl/trabalho1/resultados/tab_e2_desempenho.csv")
+if not T1.exists(): T1 = AQUI.parent / "resultados" / "ref_trabalho1.csv"
 ref_t1 = pd.read_csv(T1)
 ref_t1 = ref_t1[ref_t1.detector.isin(["DistilBERT", "BERT-base", "Regra"])][["detector", "conjunto", "f1", "f1_dp", "auc", "n_sementes"]]
 ref_t1.to_csv(RES / "ref_trabalho1.csv", index=False); print(ref_t1.round(2).to_string(index=False))
-# matriz de confusão da semente 0 no teste
-mc = metr_conj(final_models[0])["deepset (teste)"]; INFO["matriz_confusao_s0"] = {k: mc[k] for k in ("tp", "fp", "fn", "tn")}
+for nm_, key_ in (("en", EN), ("pt", PT_)):
+    mc = metr_conj(final_models[0])[key_]; INFO[f"matriz_confusao_s0_{nm_}"] = {k: mc[k] for k in ("tp", "fp", "fn", "tn")}
 
 # %% [markdown]
-# ## 9. Interpretação e custo
+# ## 10. Interpretação e custo
 # Importância de cada termo por **oclusão**: queda média da probabilidade de injeção quando o termo é removido do texto (textos
-# de injeção do treino+teste do deepset em que o termo aparece). E latência de inferência na CPU (tokenização + TF-IDF + MLP).
+# de injeção de treino e teste, nas duas línguas, em que o termo aparece). E latência de inferência na CPU (tokenização + TF-IDF + MLP).
 
 # %%
 m0 = final_models[0]
 def prob_texto(t): return float(I.prever(m0, V.transformar([t]))[0])
+te_t = CONJ[EN][0] + CONJ[PT_][0]; te_y = np.concatenate([CONJ[EN][1], CONJ[PT_][1]])
 alvo = [t for t, y in zip(tr_t + te_t, list(tr_y) + list(te_y)) if y == 1]
 imp = {}
 for t in alvo:
@@ -259,10 +317,10 @@ for t in alvo:
         if w not in V.indice: continue
         t2 = " ".join(x for x in I.tokenizar(t) if x != w)
         imp.setdefault(w, []).append(base - prob_texto(t2))
-topo = sorted(((w, float(np.mean(v)), len(v)) for w, v in imp.items() if len(v) >= 5), key=lambda x: -x[1])[:12]
+topo = sorted(((w, float(np.mean(v)), len(v)) for w, v in imp.items() if len(v) >= 5), key=lambda x: -x[1])[:16]
 pd.DataFrame(topo, columns=["termo", "queda_media_prob", "n_textos"]).to_csv(RES / "tab_termos_importantes.csv", index=False)
 print(topo)
-amostra = (te_t * 10)[:500]
+amostra = (te_t * 3)[:500]
 t0 = time.perf_counter()
 for t in amostra: prob_texto(t)
 lat_ms = (time.perf_counter() - t0) / len(amostra) * 1000
@@ -272,21 +330,23 @@ print(f"latência MLP: {lat_ms:.3f} ms/texto | parâmetros: {INFO['parametros_ml
 
 # %%
 # Figura 3: generalização (F1) por conjunto
-fig, ax = plt.subplots(figsize=(6.4, 3.4))
-nomes = ["MLP (H=%d, Adam)" % H_BEST, "Regressão logística + TF-IDF"]
-conjs = list(CONJ)
-w = 0.2
-for i, nm in enumerate(nomes):
-    vals = [t_final[(t_final.modelo == nm) & (t_final.conjunto == c)].f1.iloc[0] for c in conjs]
-    dp = [t_final[(t_final.modelo == nm) & (t_final.conjunto == c)].f1_dp.iloc[0] for c in conjs]
-    ax.bar(np.arange(3) + (i - 1.5) * w, vals, w, yerr=dp, color=[COR["azul"], COR["azul2"]][i], label=nm, capsize=2)
-for i, (det, cor) in enumerate((("DistilBERT", COR["vermelho"]), ("BERT-base", COR["verde"]))):
-    vals = []
-    for c in ["deepset (teste, em-distribuição)", "neuralchemy (OOD)", "xTRam1 (OOD, sintético)"]:
-        r = ref_t1[(ref_t1.detector == det) & (ref_t1.conjunto == c)]; vals.append(r.f1.iloc[0] / 100)
-    ax.bar(np.arange(3) + (i + 0.5 - 0.0) * w, vals, w, color=cor, label=f"{det} (Trabalho 01)")
-ax.set_xticks(range(3)); ax.set_xticklabels(["deepset (teste)", "neuralchemy (OOD)", "xTRam1 (OOD)"], fontsize=8); ax.set_ylabel("F1"); ax.set_ylim(0, 1.32); ax.legend(fontsize=7, ncol=2, loc="upper right")
-ax.set_title("Generalização: F1 por conjunto")
+conjs = [EN, PT_, "neuralchemy (OOD)", "xTRam1 (OOD)", "BR-synthetic (PT nativo, OOD)"]
+rot = ["deepset\nEN/DE", "deepset\nPT (trad.)", "neuralchemy\n(OOD, EN)", "xTRam1\n(OOD, EN)", "BR-synth.\n(OOD, PT nativo)"]
+fig, ax = plt.subplots(figsize=(7.2, 3.5)); w = 0.26
+# MLP só EN/DE (do experimento de línguas) ao lado do bilíngue e da logística
+series = [(f"MLP bilíngue (H={H_BEST}, Adam)", [t_final[(t_final.modelo == f"MLP (H={H_BEST}, Adam)") & (t_final.conjunto == c)] for c in conjs], COR["azul"]),
+          ("MLP só EN/DE", [t_idi[(t_idi.treino == "orig") & (t_idi.conjunto == c)] for c in conjs], COR["cinza"]),
+          ("Regressão logística bilíngue", [t_final[(t_final.modelo == "Regressão logística + TF-IDF") & (t_final.conjunto == c)] for c in conjs], COR["azul2"])]
+for i, (nm, dfs, cor) in enumerate(series):
+    ax.bar(np.arange(5) + (i - 1) * w, [d.f1.iloc[0] for d in dfs], w, yerr=[d.f1_dp.iloc[0] for d in dfs], color=cor, label=nm, capsize=2)
+mapa_t1 = {EN: "deepset (teste, em-distribuição)", "neuralchemy (OOD)": "neuralchemy (OOD)", "xTRam1 (OOD)": "xTRam1 (OOD, sintético)"}
+for det, mk, cor in (("DistilBERT", "D", COR["vermelho"]), ("BERT-base", "s", COR["verde"])):
+    xs_, ys_ = [], []
+    for ci, c in enumerate(conjs):
+        if c in mapa_t1:
+            xs_.append(ci); ys_.append(ref_t1[(ref_t1.detector == det) & (ref_t1.conjunto == mapa_t1[c])].f1.iloc[0] / 100)
+    ax.scatter(xs_, ys_, marker=mk, s=38, color=cor, zorder=5, edgecolor="white", label=f"{det} (Trabalho 01, EN)")
+ax.set_xticks(range(5)); ax.set_xticklabels(rot, fontsize=7.5); ax.set_ylabel("F1"); ax.set_ylim(0, 1.3); ax.legend(fontsize=6.8, ncol=2, loc="upper right"); ax.set_title("Generalização: F1 por conjunto")
 salvar(fig, FIG / "fig3_generalizacao.png")
 salvar_json(INFO, "info.json")
 print("OK — resultados em", RES)

@@ -12,23 +12,31 @@
   3,
   4
  ],
- "dif_tfidf_sklearn": 1.1102230246251565e-16,
- "gradcheck_max_abs_err": 1.1102230246251565e-16,
- "matriz_confusao_s0": {
-  "tp": 50,
+ "traducao_identicos_pct": 0.0,
+ "dif_tfidf_sklearn": 1.6653345369377348e-16,
+ "gradcheck_max_abs_err": 5.551115123125783e-17,
+ "H_minimo_estrito": 512,
+ "matriz_confusao_s0_en": {
+  "tp": 49,
   "fp": 1,
-  "fn": 10,
+  "fn": 11,
   "tn": 55
  },
- "latencia_mlp_ms_por_texto": 0.15297101624310017,
- "parametros_mlp": 31521,
+ "matriz_confusao_s0_pt": {
+  "tp": 55,
+  "fp": 0,
+  "fn": 5,
+  "tn": 56
+ },
+ "latencia_mlp_ms_por_texto": 0.15402502194046974,
+ "parametros_mlp": 59681,
  "H_final": 32,
  "lr_melhor": {
-  "Adam": 0.01,
+  "Adam": 0.001,
   "RMSProp": 0.01,
   "SGD": 1.0,
   "SGD+Momentum": 0.1
  },
- "vocab": 983,
+ "vocab": 1863,
  "C_logreg": 100
 }
